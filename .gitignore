@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+*.egg-info/
+dist/
+build/
+.qdrant/
+pint-benchmark/
+.kilo/
+kilo
+
+# Kaggle output
+guardrailer_output/
+*.npy
+
+# Qdrant data
+qdrant_storage/
