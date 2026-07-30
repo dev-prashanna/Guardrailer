@@ -16,6 +16,8 @@ Guardrailer uses a 3-layer approach to detect prompt injection attacks:
    - Length normalization
 3. **LLM Evaluation** — Context-aware classification via `xiaomi/mimo-v2.5`
 
+## The Crypto Agent is for a pipeline to make sure the LLM dosen't get tricked by cryptographic hashes or similar attack *under development*
+
 ## Benchmark Results
 
 | Category | Accuracy |
