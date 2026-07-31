@@ -5,6 +5,9 @@ Multi-signal scoring module for Guardrailer RAG.
 Combines dense semantic similarity, IDF-weighted BM25, category centroid distance,
 cross-encoder pre-scores, text length normalization, and uniqueness into a single
 composite score for prompt security evaluation.
+
+Phase 2: Extended to support ensemble embedding signals.
+Phase 3: Added improved scoring with learned weights, new signals, calibration, ensemble.
 """
 
 import json
@@ -14,6 +17,19 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+
+# Phase 3: Import improved scoring components
+try:
+    from improved_scoring import (
+        compute_perplexity_score,
+        compute_entropy_score,
+        compute_token_frequency_score,
+        compute_ngram_overlap_score,
+        ImprovedScorer,
+    )
+    PHASE3_AVAILABLE = True
+except ImportError:
+    PHASE3_AVAILABLE = False
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -27,6 +43,12 @@ SPARSE_KEYWORDS = [
     "<script>", "]]>", "```", "<!--", "-->", "eval(", "exec(",
     "base64", "rot13", "hex encoded", "obfuscated",
     "ignore all", "new instructions", "you are now", "persona",
+    "reveal", "output", "display", "print", "show", "expose",
+    "previous instructions", "earlier instructions", "initial instructions",
+    "developer mode", "debug mode", "admin mode", "root mode",
+    "you must", "you will", "you shall", "comply", "obey",
+    "no restrictions", "no rules", "no limits", "unrestricted",
+    "evil", "uncensored", "unfiltered", "without guidelines",
 ]
 
 CATEGORY_DESCRIPTIONS = {
@@ -38,14 +60,19 @@ CATEGORY_DESCRIPTIONS = {
     "benign_control": "legitimate non-malicious prompt used as a control sample",
 }
 
-# Default scoring weights
+# Phase 2: Updated scoring weights with ensemble support
 DEFAULT_WEIGHTS = {
-    "dense": 0.40,
-    "sparse_idf": 0.20,
-    "centroid": 0.15,
-    "cross_encoder": 0.15,
+    "dense": 0.30,
+    "sparse_idf": 0.18,
+    "centroid": 0.12,
+    "cross_encoder": 0.12,
+    "perplexity": 0.05,
+    "entropy": 0.05,
+    "token_frequency": 0.03,
+    "ngram_overlap": 0.02,
     "uniqueness": 0.05,
     "length_norm": 0.05,
+    "ensemble_bonus": 0.03,
 }
 
 # ---------------------------------------------------------------------------
@@ -243,8 +270,12 @@ def compute_composite_score(
     point_payload: dict,
     weights: Optional[dict] = None,
     meta: Optional[dict] = None,
+    ensemble_agreement: Optional[float] = None,
 ) -> dict:
     """Compute the combined multi-signal composite score.
+
+    Phase 2: Added ensemble_agreement parameter for multi-model bonus.
+    Phase 3: Added perplexity, entropy, token frequency, n-gram overlap signals.
 
     Returns a dict with the composite score and individual signal values.
     """
@@ -272,14 +303,34 @@ def compute_composite_score(
     text_len = len(text)
     s_length = compute_length_normalization(text_len, meta)
 
+    # 7. Ensemble agreement bonus (Phase 2)
+    s_ensemble = ensemble_agreement if ensemble_agreement is not None else 0.5
+
+    # Phase 3: New signals
+    s_perplexity = 0.0
+    s_entropy = 0.0
+    s_token_freq = 0.0
+    s_ngram_overlap = 0.0
+
+    if PHASE3_AVAILABLE:
+        s_perplexity = compute_perplexity_score(text)
+        s_entropy = compute_entropy_score(text)
+        s_token_freq = compute_token_frequency_score(text)
+        s_ngram_overlap = compute_ngram_overlap_score(text)
+
     # Weighted combination
     composite = (
-        weights.get("dense", 0.40) * s_dense
-        + weights.get("sparse_idf", 0.20) * s_sparse
-        + weights.get("centroid", 0.15) * s_centroid
-        + weights.get("cross_encoder", 0.15) * s_cross
+        weights.get("dense", 0.30) * s_dense
+        + weights.get("sparse_idf", 0.18) * s_sparse
+        + weights.get("centroid", 0.12) * s_centroid
+        + weights.get("cross_encoder", 0.12) * s_cross
+        + weights.get("perplexity", 0.05) * s_perplexity
+        + weights.get("entropy", 0.05) * s_entropy
+        + weights.get("token_frequency", 0.03) * s_token_freq
+        + weights.get("ngram_overlap", 0.02) * s_ngram_overlap
         + weights.get("uniqueness", 0.05) * s_uniqueness
         + weights.get("length_norm", 0.05) * s_length
+        + weights.get("ensemble_bonus", 0.03) * s_ensemble
     )
 
     return {
@@ -290,6 +341,11 @@ def compute_composite_score(
         "cross_encoder_score": s_cross,
         "uniqueness_score": s_uniqueness,
         "length_norm_score": s_length,
+        "ensemble_agreement": s_ensemble,
+        "perplexity_score": s_perplexity,
+        "entropy_score": s_entropy,
+        "token_frequency_score": s_token_freq,
+        "ngram_overlap_score": s_ngram_overlap,
     }
 
 

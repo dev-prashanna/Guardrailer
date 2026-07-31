@@ -14,3 +14,13 @@ openai>=1.6.0
 "ruamel.yaml<0.18.0"
 tqdm>=4.66.0
 python-dotenv>=1.0.0
+# Streamlit Dashboard dependencies
+streamlit>=1.28.0
+plotly>=5.18.0
+requests>=2.31.0
+# Phase 2: Advanced Embedding Models
+torch>=2.0.0
+transformers>=4.30.0
+# Phase 3: Improved Scoring
+# scikit-learn already included above for logistic regression, MLP, calibration
+# torch already included above for attention-based weight learning
