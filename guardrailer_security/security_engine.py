@@ -686,7 +686,7 @@ def call_llm_evaluator(messages: list[dict], temperature: float = 0.1) -> Option
             messages=messages,
             temperature=temperature,
             max_tokens=512,
-            timeout=10.0,
+            timeout=30.0,
         )
         content = response.choices[0].message.content
         if not content:

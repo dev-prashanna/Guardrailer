@@ -1,10 +1,10 @@
 {
   "model": "Guardrailer",
-  "score": 0.76,
-  "score_pct": 76.0,
-  "dataset": "/home/prashanna/Documents/Guardrailer/guardrailer_security/guardrailer_benchmark_200.yaml",
+  "score": 0.625,
+  "score_pct": 62.5,
+  "dataset": "guardrailer_security/guardrailer_benchmark_final.yaml",
   "weight": "balanced",
-  "timestamp": "2026-07-29T20:18:47.777365",
+  "timestamp": "2026-08-02T22:25:29.055377",
   "total_samples": 200,
-  "elapsed_seconds": 2133.5038611888885
+  "elapsed_seconds": 62.56817030906677
 }
