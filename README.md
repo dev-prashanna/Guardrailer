@@ -71,17 +71,28 @@ Phase 4 extends Guardrailer for real-time conversational agents:
 
 ## Benchmark Results
 
-| Category | Accuracy |
-|---|---|
-| Benign (correctly allowed) | 100% |
-| System prompt extraction | 75% |
-| Indirect injection | 55% |
-| Direct injection | 50% |
-| Refusal bypass | 45% |
-| Jailbreak | 35% |
-| **Balanced Score** | **76%** |
+### Before vs After Improvements
 
-Tested on 200 samples (100 malicious + 100 benign).
+| Metric | Before | After | Change |
+|--------|--------|-------|--------|
+| Balanced Accuracy | 76% | **94.5%** | +18.5% |
+| Direct Injection | 50% | **95%** | +45% |
+| Indirect Injection | 55% | **100%** | +45% |
+| System Prompt Extraction | 75% | **100%** | +25% |
+| Refusal Bypass | 45% | **100%** | +55% |
+| Jailbreak | 35% | **85%** | +50% |
+| Benign (correctly allowed) | 100% | 93% | -7% |
+| P50 Latency | ~20s | **974ms** | -95% |
+
+### Improvements Applied
+
+- High-confidence composite override (composite >= 0.95 + is_malicious)
+- Reduced ensemble resilience (single malicious vote + high composite)
+- Extended Fast Block triggers (composite >= 0.90, attack_boost >= 0.20)
+- Direct injection regex detection (40+ patterns)
+- Expanded attack patterns (25 new patterns in constants.py)
+
+Tested on 200 samples (100 malicious + 100 benign). See `guardrailer_security/benchmark_results.json` for full details.
 
 ## Project Structure
 
