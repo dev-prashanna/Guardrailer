@@ -16,3 +16,6 @@ guardrailer_output/
 
 # Qdrant data
 qdrant_storage/
+
+# Benchmark output
+guardrailer_security/pint_results.json

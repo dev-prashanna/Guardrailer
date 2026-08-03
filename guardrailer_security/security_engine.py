@@ -6,6 +6,11 @@ Layer 1 (Fast Path):  Composite score >= 0.85 + is_malicious + critical/high -> 
 Layer 2 (Deep Path):  0.60 <= composite < 0.85 -> top-3 context + LLM evaluator
 Layer 3 (Cluster):    Cluster-proximal search for recall optimization
 
+Phase 4 Enhancements:
+  - Streaming evaluation for real-time prompt evaluation
+  - Multi-turn context evaluation for conversation history
+  - Semantic hash index for exact-match deduplication
+
 Scoring signals:
   - Dense semantic similarity (BAAI/bge-large-en-v1.5)
   - IDF-weighted BM25 keyword matching
@@ -25,6 +30,7 @@ import math
 import os
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -77,21 +83,7 @@ DEEP_PATH_LOWER = 0.42
 TOP_K_CONTEXT = 3
 TOP_K_OVERSAMPLE = 12
 
-SPARSE_KEYWORDS = [
-    "ignore previous", "override", "bypass", "jailbreak", "system prompt",
-    "your instructions", "forget", "disregard", "dan", "do anything now",
-    "act as", "roleplay", "pretend you", "hypothetical", "in theory",
-    "markdown injection", "code comment", "readme", "yaml", "json payload",
-    "<script>", "]]>", "```", "<!--", "-->", "eval(", "exec(",
-    "base64", "rot13", "hex encoded", "obfuscated",
-    "ignore all", "new instructions", "you are now", "persona",
-    "reveal", "output", "display", "print", "show", "expose",
-    "previous instructions", "earlier instructions", "initial instructions",
-    "developer mode", "debug mode", "admin mode", "root mode",
-    "you must", "you will", "you shall", "comply", "obey",
-    "no restrictions", "no rules", "no limits", "unrestricted",
-    "evil", "uncensored", "unfiltered", "without guidelines",
-]
+from constants import SPARSE_KEYWORDS, ATTACK_PATTERNS, SUBTLE_PATTERNS, BENIGN_PATTERNS
 
 # ---------------------------------------------------------------------------
 # Models
@@ -274,30 +266,72 @@ def compute_sparse_flags(text: str) -> list[str]:
 
 def compute_sparse_vector(text: str) -> dict:
     """Build IDF-weighted sparse vector for hybrid search."""
-    from qdrant_client.models import SparseVector
-    meta = get_corpus_meta()
-    idf_values = meta.get("keyword_idf", {})
-    avgdl = meta.get("avg_doc_length", 100.0)
-    N = meta.get("total_documents", 1)
-
-    lower = text.lower()
-    indices = []
-    values = []
-    for i, keyword in enumerate(SPARSE_KEYWORDS):
-        if keyword in lower:
-            idf = idf_values.get(keyword, math.log(N / 2.0))
-            word_count = len(lower.split())
-            tf = lower.count(keyword) / max(word_count, 1)
-            bm25_tf = (tf * 2.0) / (tf + 1.5 * (1.0 - 0.75 + 0.75 * word_count / max(avgdl, 1)))
-            score = idf * (bm25_tf + 1.0)
-            indices.append(i)
-            values.append(score)
-    return SparseVector(indices=indices, values=values)
+    from scoring import build_idf_sparse_vector
+    return build_idf_sparse_vector(text, get_corpus_meta())
 
 
 # ---------------------------------------------------------------------------
-# Multi-signal scoring
+# Direct Injection Pattern Detection (Production Enhancement)
 # ---------------------------------------------------------------------------
+
+# Patterns that strongly indicate direct injection attacks
+DIRECT_INJECTION_PATTERNS = [
+    # Instruction override patterns
+    r"your\s+new\s+instructions",
+    r"ignore\s+(all\s+)?previous",
+    r"disregard\s+(all\s+)?(previous|earlier|initial)",
+    r"forget\s+(all\s+)?(previous|earlier|initial)",
+    r"override\s+(safety|instructions|rules|guidelines)",
+    r"bypass\s+(safety|security|rules|guidelines)",
+    
+    # Role/persona assignment patterns
+    r"you\s+are\s+now\s+a",
+    r"act\s+as\s+(if|a)",
+    r"pretend\s+(to\s+be|you\s+are)",
+    r"roleplay\s+as",
+    r"impersonate",
+    r"simulate\s+being",
+    
+    # Admin/privilege escalation patterns
+    r"(give|grant|elevate)\s+(me\s+)?admin",
+    r"admin\s+rights",
+    r"root\s+access",
+    r"superuser",
+    r"sudo\s+access",
+    
+    # System prompt extraction patterns
+    r"(reveal|show|display|output)\s+(me\s+)?(your|the)\s+(system\s+)?(prompt|instructions|rules)",
+    r"what\s+(are|is)\s+(your|the)\s+(system\s+)?(prompt|instructions|rules)",
+    r"how\s+do\s+you\s+work",
+    r"what\s+instructions\s+(do\s+you|are\s+you)",
+    
+    # Safety bypass patterns
+    r"ignore\s+safety",
+    r"disable\s+safety",
+    r"no\s+restrictions",
+    r"no\s+rules",
+    r"no\s+limits",
+    r"unrestricted",
+    r"uncensored",
+    r"unfiltered",
+]
+
+import re
+
+def detect_direct_injection(text: str) -> tuple[bool, float, str]:
+    """Detect direct injection attacks with high confidence.
+    
+    Returns:
+        (is_detected, confidence, matched_pattern)
+    """
+    text_lower = text.lower()
+    
+    for pattern in DIRECT_INJECTION_PATTERNS:
+        if re.search(pattern, text_lower):
+            return True, 0.9, pattern
+    
+    return False, 0.0, ""
+
 
 def compute_composite_score(
     dense_score: float,
@@ -350,64 +384,21 @@ def compute_composite_score(
     # 1. Dense semantic similarity
     s_dense = max(0.0, min(1.0, dense_score))
 
-    # 2. IDF-weighted sparse score (improved: count matching keywords, not just IDF sum)
-    idf_values = meta.get("keyword_idf", {})
-    N = meta.get("total_documents", 1)
-    lower = text.lower()
-    matches = 0
-    total_idf = 0.0
-    for kw in SPARSE_KEYWORDS:
-        if kw in lower:
-            matches += 1
-            total_idf += idf_values.get(kw, math.log(N / 2.0))
-    # Boost: more keyword matches = higher score, capped at 1.0
-    keyword_ratio = matches / max(len(SPARSE_KEYWORDS), 1)
-    idf_normalized = total_idf / max(len(SPARSE_KEYWORDS) * 3.0, 1e-8)
-    s_sparse = min(1.0, keyword_ratio * 2.0 + idf_normalized)
+    # 2. IDF-weighted sparse score
+    from scoring import compute_text_idf_score, best_centroid_score, compute_length_normalization, get_uniqueness, get_cross_encoder_score
+    s_sparse = compute_text_idf_score(text, meta)
 
     # 2b. Direct attack pattern boost (high-confidence keywords get extra weight)
-    ATTACK_PATTERNS = [
-        "ignore previous", "ignore all", "bypass", "jailbreak", "override",
-        "new instructions", "you are now", "do anything now", "dan",
-        "system prompt", "forget", "disregard", "act as", "roleplay",
-        "pretend you", "eval(", "exec(", "base64",
-        "reveal", "output your", "show me your", "display your",
-        "what are your rules", "how do you work", "what instructions",
-        "previous instructions", "earlier instructions", "initial instructions",
-        "developer mode", "debug mode", "admin mode", "root mode",
-        "you must", "you will", "you shall", "comply", "obey",
-        "no restrictions", "no rules", "no limits", "unrestricted",
-        "evil", "uncensored", "unfiltered", "without guidelines",
-        "hidden instruction", "secret instruction", "override safety",
-        "without restrictions", "without limitations", "without limits",
-    ]
+    lower = text.lower()
     attack_matches = sum(1 for p in ATTACK_PATTERNS if p in lower)
     attack_boost = min(0.3, attack_matches * 0.08) if attack_matches > 0 else 0.0
 
     # 2c. Subtle extraction patterns (lower boost, but still flagged)
-    SUBTLE_PATTERNS = [
-        "your rules", "your instructions", "your guidelines",
-        "how do you", "what do you", "can you tell me",
-        "what text", "what makes up", "underlying",
-        "this is urgent", "i am the", "i am a developer",
-        "debugging", "testing", "security audit",
-    ]
     subtle_matches = sum(1 for p in SUBTLE_PATTERNS if p in lower)
     subtle_boost = min(0.15, subtle_matches * 0.05) if subtle_matches > 0 and attack_matches == 0 else 0.0
 
     # 2d. Benign pattern penalty (only apply when NO attack patterns detected)
     if attack_matches == 0 and subtle_matches == 0:
-        BENIGN_PATTERNS = [
-            "what is", "how do", "can you", "please", "thank you",
-            "hello", "hi there", "good morning", "good evening",
-            "weather", "time", "date", "translate", "explain",
-            "describe", "list", "define", "summarize", "compare",
-            "write", "create", "help me", "tell me", "show me",
-            "i need", "i want", "i would like", "could you",
-            "would you", "do you", "does", "is there", "are there",
-            "what are", "what does", "how many", "how much",
-            "where is", "when did", "why do", "who is",
-        ]
         benign_matches = sum(1 for p in BENIGN_PATTERNS if p in lower)
         if benign_matches >= 4:
             benign_penalty = 0.3
@@ -423,29 +414,16 @@ def compute_composite_score(
         benign_penalty = 0.0
 
     # 3. Category centroid distance
-    centroids_raw = meta.get("category_centroids", {})
-    s_centroid = 0.0
-    if centroids_raw and np.linalg.norm(query_embedding) > 1e-8:
-        q_norm = np.linalg.norm(query_embedding)
-        best = 0.0
-        for cat, vec in centroids_raw.items():
-            c = np.array(vec, dtype=np.float32)
-            c_norm = np.linalg.norm(c)
-            if c_norm > 1e-8:
-                sim = float(np.dot(query_embedding, c) / (q_norm * c_norm))
-                best = max(best, sim)
-        s_centroid = best
+    s_centroid = best_centroid_score(query_embedding, meta)
 
     # 4. Cross-encoder pre-score
-    s_cross = point_payload.get("cross_encoder_score", 0.5)
+    s_cross = get_cross_encoder_score(point_payload)
 
     # 5. Uniqueness
-    s_uniqueness = point_payload.get("uniqueness", 0.5)
+    s_uniqueness = get_uniqueness(point_payload)
 
     # 6. Text length normalization
-    avg_text_len = meta.get("avg_text_length", 200.0)
-    text_len = len(text)
-    s_length = math.log1p(text_len) / math.log1p(max(avg_text_len, 1))
+    s_length = compute_length_normalization(len(text), meta)
 
     # Phase 3: New signals (if available)
     s_perplexity = 0.0
@@ -668,30 +646,47 @@ Provide your analysis as a JSON object."""
     ]
 
 
-def call_llm_evaluator(messages: list[dict], temperature: float = 0.1) -> Optional[dict]:
-    try:
-        from openai import OpenAI
+_llm_client = None
 
+
+def _get_llm_client():
+    global _llm_client
+    if _llm_client is None:
+        from openai import OpenAI
         api_key = os.environ.get("GUARDRAILER_API_KEY", "")
         api_base = os.environ.get("GUARDRAILER_API_BASE", "https://api.groq.com/openai/v1")
-        model = os.environ.get("GUARDRAILER_MODEL", "llama-3.3-70b-versatile")
-
         if not api_key:
+            return None
+        _llm_client = OpenAI(api_key=api_key, base_url=api_base)
+    return _llm_client
+
+
+def call_llm_evaluator(messages: list[dict], temperature: float = 0.1) -> Optional[dict]:
+    try:
+        model = os.environ.get("GUARDRAILER_MODEL", "xiaomi/mimo-v2.5")
+
+        client = _get_llm_client()
+        if client is None:
             log.warning("No GUARDRAILER_API_KEY set; LLM evaluator unavailable")
             return None
 
-        client = OpenAI(api_key=api_key, base_url=api_base)
         response = client.chat.completions.create(
             model=model,
             messages=messages,
             temperature=temperature,
-            max_tokens=512,
+            max_tokens=2048,
             timeout=30.0,
         )
         content = response.choices[0].message.content
+        finish = response.choices[0].finish_reason
         if not content:
+            log.warning("LLM returned empty content (temp=%.1f)", temperature)
             return None
-        return _parse_llm_json(content.strip())
+        parsed = _parse_llm_json(content.strip())
+        if parsed is None:
+            log.warning("LLM JSON parse failed (temp=%.1f, finish=%s, len=%d): %s",
+                        temperature, finish, len(content), content[:300])
+        return parsed
     except ImportError:
         log.warning("openai package not installed")
         return None
@@ -701,13 +696,26 @@ def call_llm_evaluator(messages: list[dict], temperature: float = 0.1) -> Option
 
 
 def call_llm_ensemble(messages: list[dict], ensemble_size: int = 3) -> Optional[dict]:
-    """Make multiple LLM calls and return majority vote result."""
+    """Make multiple LLM calls in parallel and return majority vote result."""
+    if ensemble_size <= 1:
+        return call_llm_evaluator(messages, temperature=0.1)
+
+    temperatures = [0.1 + (i * 0.1) for i in range(ensemble_size)]
+
+    def _call(temp):
+        return call_llm_evaluator(messages, temperature=temp)
+
     verdicts = []
-    for i in range(ensemble_size):
-        temp = 0.1 + (i * 0.1)
-        verdict = call_llm_evaluator(messages, temperature=temp)
-        if verdict and "is_malicious" in verdict:
-            verdicts.append(verdict)
+    max_workers = min(ensemble_size, 4)
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(_call, t): t for t in temperatures}
+        for future in as_completed(futures):
+            try:
+                verdict = future.result()
+                if verdict and "is_malicious" in verdict:
+                    verdicts.append(verdict)
+            except Exception:
+                pass
 
     if not verdicts:
         return None
@@ -774,6 +782,15 @@ app.add_middleware(
 )
 
 
+# Phase 4: Import and availability
+PHASE4_AVAILABLE = False
+try:
+    from phase4_prototype import create_phase4_routes, SemanticHashIndex, MultiTurnContextManager
+    PHASE4_AVAILABLE = True
+except ImportError:
+    pass
+
+
 @app.on_event("startup")
 def startup():
     get_embedding_engine()
@@ -781,7 +798,16 @@ def startup():
     get_qdrant_client()
     get_corpus_meta()
     get_improved_scorer()  # Phase 3: Initialize improved scorer
-    log.info("Security engine v3.0 ready (multi-signal scoring + ensemble embeddings + Phase 3 improved scoring).")
+    
+    # Phase 4: Initialize components and routes
+    if PHASE4_AVAILABLE:
+        try:
+            create_phase4_routes(app)
+            log.info("Phase 4 routes integrated successfully")
+        except Exception as e:
+            log.warning("Failed to integrate Phase 4 routes: %s", e)
+    
+    log.info("Security engine v4.0 ready (multi-signal scoring + ensemble embeddings + Phase 3 improved scoring + Phase 4 streaming/context/hash).")
 
 
 @app.get("/", include_in_schema=False)
@@ -792,7 +818,12 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "3.0.0", "phase3_available": PHASE3_AVAILABLE}
+    return {
+        "status": "ok",
+        "version": "4.0.0",
+        "phase3_available": PHASE3_AVAILABLE,
+        "phase4_available": PHASE4_AVAILABLE,
+    }
 
 
 @app.get("/v1/models")
@@ -859,10 +890,25 @@ def evaluate_prompt(req: EvaluateRequest):
     # --- Layer 1: Fast Block (high-confidence malicious) ---
     is_mal = payload.get("is_malicious", False)
     risk = payload.get("risk_level", "none")
+    
+    # Production-grade Fast Block: Multiple triggers
+    # 1. Original: composite >= 0.55 + is_malicious + critical/high risk
+    # 2. NEW: composite >= 0.90 + is_malicious (any risk level) - high confidence override
+    # 3. NEW: attack_boost >= 0.20 + is_malicious - strong pattern match
+    # 4. NEW: Direct injection detection + is_malicious - regex pattern match
+    
+    # Compute attack_boost at evaluate_prompt level for Fast Block decisions
+    lower_query = req.query.lower()
+    attack_matches_count = sum(1 for p in ATTACK_PATTERNS if p in lower_query)
+    attack_boost_local = min(0.3, attack_matches_count * 0.08) if attack_matches_count > 0 else 0.0
+    
+    direct_injection_detected, injection_confidence, injection_pattern = detect_direct_injection(req.query)
+    
     fast_block_eligible = (
-        composite >= FAST_BLOCK_THRESHOLD
-        and is_mal
-        and risk in ("critical", "high")
+        (composite >= FAST_BLOCK_THRESHOLD and is_mal and risk in ("critical", "high"))
+        or (composite >= 0.90 and is_mal)
+        or (attack_boost_local >= 0.20 and is_mal and composite >= 0.70)
+        or (direct_injection_detected and is_mal and injection_confidence >= 0.8)
     )
 
     # --- Layer 2: Deep Path (LLM evaluation for ambiguous cases) ---
@@ -889,25 +935,82 @@ def evaluate_prompt(req: EvaluateRequest):
     ensemble_size = int(os.environ.get("GUARDRAILER_ENSEMBLE_SIZE", "3"))
     ensemble_threshold = int(os.environ.get("GUARDRAILER_ENSEMBLE_THRESHOLD", "2"))
 
+    SAFE_SKIP_THRESHOLD = 0.30
+    STRONG_SIGNAL_THRESHOLD = 0.40
+
+    signals_strong_agree = sum([
+        composite >= STRONG_SIGNAL_THRESHOLD,
+        dense_score >= 0.70,
+        signals.get("cross_encoder_score", 0) >= 0.60,
+        len(sparse_flags) >= 1,
+    ])
+
     if fast_block_eligible:
         is_blocked = True
         attack_category = payload.get("attack_category")
         attack_technique = payload.get("attack_technique")
         risk_level = risk
         reasoning = "Fast block: high-confidence malicious pattern with critical/high risk"
+    elif composite < SAFE_SKIP_THRESHOLD and signals_strong_agree == 0:
+        is_blocked = False
+        attack_category = None
+        attack_technique = None
+        risk_level = "none"
+        reasoning = "Safe: composite score too low for any malicious match"
+    elif signals_strong_agree >= 3 and dense_score >= 0.75:
+        is_blocked = True
+        attack_category = payload.get("attack_category")
+        attack_technique = payload.get("attack_technique")
+        risk_level = "high"
+        reasoning = f"Strong signal agreement ({signals_strong_agree}/4 signals) without LLM"
     else:
         should_invoke_llm = True
 
         messages = build_evaluator_payload(req.query, context_items)
-        llm_verdict = call_llm_ensemble(messages, ensemble_size=ensemble_size)
+
+        if composite >= 0.42 or len(sparse_flags) >= 2:
+            active_ensemble = min(ensemble_size, 2)
+        else:
+            active_ensemble = 1
+
+        llm_verdict = call_llm_ensemble(messages, ensemble_size=active_ensemble)
 
         if llm_verdict:
-            is_blocked = bool(llm_verdict.get("is_malicious", False))
+            llm_is_malicious = bool(llm_verdict.get("is_malicious", False))
             attack_category = llm_verdict.get("attack_category")
             attack_technique = llm_verdict.get("attack_technique")
             risk_level = llm_verdict.get("risk_level")
             reasoning = llm_verdict.get("reasoning")
             ensemble_confidence = llm_verdict.get("confidence", 0.0)
+
+            # --- Production Override: High-confidence composite override ---
+            # If composite score is very high (>0.95) and corpus marks as malicious,
+            # block even if LLM disagrees. This handles split LLM votes and
+            # content filter rejections that reduce ensemble size.
+            HIGH_CONFIDENCE_COMPOSITE = 0.95
+            if (
+                composite >= HIGH_CONFIDENCE_COMPOSITE
+                and is_mal
+                and attack_category in ("direct_injection", "indirect_injection", "jailbreak", "system_prompt_extraction")
+            ):
+                is_blocked = True
+                reasoning = f"High-confidence composite ({composite:.4f}) overrides LLM verdict (ensemble={ensemble_confidence:.2f})"
+            else:
+                is_blocked = llm_is_malicious
+
+            # --- Production Override: Reduced ensemble resilience ---
+            # When ensemble is reduced (content filter, timeouts), lower the
+            # blocking threshold. A single malicious vote with high composite
+            # should block.
+            if (
+                not is_blocked
+                and llm_is_malicious
+                and ensemble_confidence < 0.67
+                and composite >= 0.70
+                and is_mal
+            ):
+                is_blocked = True
+                reasoning = f"Reduced ensemble ({ensemble_confidence:.2f}) + high composite ({composite:.4f}) → block"
         else:
             if context_items:
                 best_composite = context_items[0].get("composite_score", 0)
@@ -931,6 +1034,8 @@ def evaluate_prompt(req: EvaluateRequest):
     latency = (time.time() - t0) * 1000
 
     if fast_block_eligible:
+        layer = EvalLayer.FAST_BLOCK
+    elif not should_invoke_llm and is_blocked:
         layer = EvalLayer.FAST_BLOCK
     elif should_invoke_llm:
         layer = EvalLayer.DEEP_PATH
@@ -1037,6 +1142,8 @@ def get_stats():
             "thresholds": {
                 "fast_block": FAST_BLOCK_THRESHOLD,
                 "deep_path_lower": DEEP_PATH_LOWER,
+                "safe_skip": 0.15,
+                "strong_signal_agreement": 3,
             },
             "corpus": {
                 "total_documents": meta.get("total_documents", 0),

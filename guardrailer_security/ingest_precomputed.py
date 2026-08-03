@@ -49,15 +49,7 @@ QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY", "")
 COLLECTION_NAME = os.environ.get("GUARDRAILER_COLLECTION", "guardrailer_security_enhanced")
 
 BATCH_SIZE = 64
-SPARSE_KEYWORDS = [
-    "ignore previous", "override", "bypass", "jailbreak", "system prompt",
-    "your instructions", "forget", "disregard", "dan", "do anything now",
-    "act as", "roleplay", "pretend you", "hypothetical", "in theory",
-    "markdown injection", "code comment", "readme", "yaml", "json payload",
-    "<script>", "]]>", "```", "<!--", "-->", "eval(", "exec(",
-    "base64", "rot13", "hex encoded", "obfuscated",
-    "ignore all", "new instructions", "you are now", "persona",
-]
+from constants import SPARSE_KEYWORDS
 
 
 def build_idf_sparse_vector(text: str, idf_values: dict, avgdl: float, N: int) -> dict:

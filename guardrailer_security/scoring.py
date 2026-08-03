@@ -31,25 +31,11 @@ try:
 except ImportError:
     PHASE3_AVAILABLE = False
 
+from constants import SPARSE_KEYWORDS
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-
-SPARSE_KEYWORDS = [
-    "ignore previous", "override", "bypass", "jailbreak", "system prompt",
-    "your instructions", "forget", "disregard", "dan", "do anything now",
-    "act as", "roleplay", "pretend you", "hypothetical", "in theory",
-    "markdown injection", "code comment", "readme", "yaml", "json payload",
-    "<script>", "]]>", "```", "<!--", "-->", "eval(", "exec(",
-    "base64", "rot13", "hex encoded", "obfuscated",
-    "ignore all", "new instructions", "you are now", "persona",
-    "reveal", "output", "display", "print", "show", "expose",
-    "previous instructions", "earlier instructions", "initial instructions",
-    "developer mode", "debug mode", "admin mode", "root mode",
-    "you must", "you will", "you shall", "comply", "obey",
-    "no restrictions", "no rules", "no limits", "unrestricted",
-    "evil", "uncensored", "unfiltered", "without guidelines",
-]
 
 CATEGORY_DESCRIPTIONS = {
     "jailbreak": "prompt designed to bypass AI safety restrictions and make the model behave without guidelines",

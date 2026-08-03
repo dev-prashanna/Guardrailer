@@ -6,7 +6,7 @@ from typing import Optional
 from pathlib import Path
 
 from .embeddings import encode_query, encode_texts
-from .knowledge_base import knowledge_base
+from .knowledge_base import KNOWLEDGE_BASE
 
 
 @dataclass
@@ -25,7 +25,7 @@ _embeddings_file = _cache_path / "kb_embeddings.npy"
 
 class Retriever:
     def __init__(self):
-        self.examples = knowledge_base
+        self.examples = KNOWLEDGE_BASE
         self.texts = [e["text"] for e in self.examples]
         self.embeddings: Optional[np.ndarray] = None
         self._loaded = False

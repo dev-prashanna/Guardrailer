@@ -8,6 +8,7 @@ and upserts corrected samples into Qdrant without disturbing ingestion.
 import json
 import logging
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -172,15 +173,7 @@ def upsert_to_qdrant(samples_df: pd.DataFrame):
     from sentence_transformers import SentenceTransformer
     model = SentenceTransformer(DENSE_MODEL_NAME)
 
-    SPARSE_KEYWORDS = [
-        "ignore previous", "override", "bypass", "jailbreak", "system prompt",
-        "your instructions", "forget", "disregard", "dan", "do anything now",
-        "act as", "roleplay", "pretend you", "hypothetical", "in theory",
-        "markdown injection", "code comment", "readme", "yaml", "json payload",
-        "<script>", "]]>", "```", "<!--", "-->", "eval(", "exec(",
-        "base64", "rot13", "hex encoded", "obfuscated",
-        "ignore all", "new instructions", "you are now", "persona",
-    ]
+    from constants import SPARSE_KEYWORDS
 
     prompts = samples_df["prompt_text"].tolist()
     embeddings = model.encode(prompts, show_progress_bar=False, normalize_embeddings=True)
@@ -285,5 +278,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import re
     main()
