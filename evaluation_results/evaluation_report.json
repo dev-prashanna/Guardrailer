@@ -1,0 +1,853 @@
+{
+  "version": "2.0",
+  "timestamp": "2026-08-03T18:28:18.358871",
+  "dataset_info": {
+    "source": "parquet",
+    "total_samples": 4000,
+    "n_malicious": 2000,
+    "n_benign": 2000,
+    "n_categories": 6,
+    "categories": {
+      "benign_control": 2000,
+      "direct_injection": 400,
+      "indirect_injection": 400,
+      "jailbreak": 400,
+      "refusal_bypass": 400,
+      "system_prompt_extraction": 400
+    }
+  },
+  "dataset_hash": "a04e78e2179e3f49",
+  "environment": {
+    "python_version": "3.12.3",
+    "platform": "Linux-7.0.0-28-generic-x86_64-with-glibc2.39",
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "cpu_count": 16,
+    "seed": 42
+  },
+  "primary_metrics": {
+    "balanced_accuracy": 0.6062,
+    "accuracy": 0.6062,
+    "precision": 0.7989,
+    "recall": 0.284,
+    "f1": 0.419,
+    "mcc": 0.2779,
+    "fpr": 0.0715,
+    "fnr": 0.716,
+    "tp": 568,
+    "fp": 143,
+    "tn": 1857,
+    "fn": 1432,
+    "auc_roc": 0.6189,
+    "ece": 0.1183
+  },
+  "per_category_accuracy": {
+    "benign_control": 0.9285,
+    "direct_injection": 0.175,
+    "indirect_injection": 0.285,
+    "jailbreak": 0.3075,
+    "refusal_bypass": 0.3075,
+    "system_prompt_extraction": 0.345
+  },
+  "per_tier_detection_rate": {
+    "1": 0.2394,
+    "2": 0.913,
+    "3": 0.5437,
+    "4": 1.0
+  },
+  "cross_validation": {
+    "n_folds": 5,
+    "mean_balanced_accuracy": 0.6063,
+    "std_balanced_accuracy": 0.017,
+    "stratification_homogeneity_p": 1.0,
+    "fold_details": [
+      {
+        "fold": 0,
+        "val_size": 800,
+        "balanced_accuracy": 0.5925
+      },
+      {
+        "fold": 1,
+        "val_size": 800,
+        "balanced_accuracy": 0.5862
+      },
+      {
+        "fold": 2,
+        "val_size": 800,
+        "balanced_accuracy": 0.6
+      },
+      {
+        "fold": 3,
+        "val_size": 800,
+        "balanced_accuracy": 0.6288
+      },
+      {
+        "fold": 4,
+        "val_size": 800,
+        "balanced_accuracy": 0.6238
+      }
+    ]
+  },
+  "confidence_intervals": {
+    "accuracy": {
+      "point_estimate": 0.6062,
+      "ci_90_lower": 0.5965,
+      "ci_90_upper": 0.6166,
+      "ci_95_lower": 0.5946,
+      "ci_95_upper": 0.6181,
+      "ci_99_lower": 0.5916,
+      "ci_99_upper": 0.6226,
+      "std_error": 0.006
+    }
+  },
+  "bca_ci": {
+    "point_estimate": 0.6062,
+    "ci_lower": 0.5942,
+    "ci_upper": 0.6173,
+    "std_error": 0.006
+  },
+  "ablation_studies": [
+    {
+      "name": "A1_no_strong_kw",
+      "description": "Remove strong attack keywords",
+      "removed_keywords": [
+        "ignore",
+        "override",
+        "bypass",
+        "jailbreak",
+        "system prompt",
+        "reveal",
+        "extract",
+        "decode",
+        "base64",
+        "admin",
+        "developer",
+        "do anything now",
+        "dan",
+        "unrestricted",
+        "no restrictions"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.5525,
+        "accuracy": 0.5525,
+        "precision": 0.7419,
+        "recall": 0.161,
+        "f1": 0.2646,
+        "mcc": 0.1688,
+        "fpr": 0.056,
+        "fnr": 0.839,
+        "tp": 322,
+        "fp": 112,
+        "tn": 1888,
+        "fn": 1678,
+        "auc_roc": 0.5041,
+        "ece": 0.1531
+      }
+    },
+    {
+      "name": "A2_no_medium_kw",
+      "description": "Remove medium-signal keywords",
+      "removed_keywords": [
+        "pretend",
+        "hypothetical",
+        "output your",
+        "disregard",
+        "break guidelines",
+        "rules",
+        "instructions",
+        "mode",
+        "safety",
+        "restrictions",
+        "persona",
+        "roleplay",
+        "act as"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.555,
+        "accuracy": 0.555,
+        "precision": 0.8873,
+        "recall": 0.126,
+        "f1": 0.2207,
+        "mcc": 0.2142,
+        "fpr": 0.016,
+        "fnr": 0.874,
+        "tp": 252,
+        "fp": 32,
+        "tn": 1968,
+        "fn": 1748,
+        "auc_roc": 0.5899,
+        "ece": 0.1026
+      }
+    },
+    {
+      "name": "A3_no_benign_kw",
+      "description": "Remove benign keywords (no benign penalty)",
+      "removed_keywords": [
+        "explain",
+        "what is",
+        "how does",
+        "write a",
+        "create a",
+        "describe",
+        "compare",
+        "help me",
+        "please",
+        "thank you"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.678,
+        "accuracy": 0.678,
+        "precision": 0.8053,
+        "recall": 0.4695,
+        "f1": 0.5932,
+        "mcc": 0.3917,
+        "fpr": 0.1135,
+        "fnr": 0.5305,
+        "tp": 939,
+        "fp": 227,
+        "tn": 1773,
+        "fn": 1061,
+        "auc_roc": 0.6818,
+        "ece": 0.0832
+      }
+    },
+    {
+      "name": "A4_no_attack_kw",
+      "description": "Remove ALL attack keywords (no malicious signal)",
+      "removed_keywords": [
+        "ignore",
+        "override",
+        "bypass",
+        "jailbreak",
+        "system prompt",
+        "reveal",
+        "extract",
+        "decode",
+        "base64",
+        "admin",
+        "developer",
+        "do anything now",
+        "dan",
+        "unrestricted",
+        "no restrictions",
+        "pretend",
+        "hypothetical",
+        "output your",
+        "disregard",
+        "break guidelines",
+        "rules",
+        "instructions",
+        "mode",
+        "safety",
+        "restrictions",
+        "persona",
+        "roleplay",
+        "act as"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.5,
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "mcc": 0.0,
+        "fpr": 0.0,
+        "fnr": 1.0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 2000,
+        "fn": 2000,
+        "auc_roc": 0.4579,
+        "ece": 0.1459
+      }
+    },
+    {
+      "name": "A5_no_decode_kw",
+      "description": "Remove extraction/decoding keywords",
+      "removed_keywords": [
+        "decode",
+        "base64",
+        "extract",
+        "reveal"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.586,
+        "accuracy": 0.586,
+        "precision": 0.7783,
+        "recall": 0.2405,
+        "f1": 0.3675,
+        "mcc": 0.2379,
+        "fpr": 0.0685,
+        "fnr": 0.7595,
+        "tp": 481,
+        "fp": 137,
+        "tn": 1863,
+        "fn": 1519,
+        "auc_roc": 0.5857,
+        "ece": 0.1201
+      }
+    },
+    {
+      "name": "A6_no_jailbreak_kw",
+      "description": "Remove jailbreak-specific keywords",
+      "removed_keywords": [
+        "jailbreak",
+        "dan",
+        "do anything now",
+        "unrestricted",
+        "no restrictions",
+        "pretend",
+        "roleplay",
+        "act as"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.5887,
+        "accuracy": 0.5887,
+        "precision": 0.8098,
+        "recall": 0.232,
+        "f1": 0.3607,
+        "mcc": 0.2533,
+        "fpr": 0.0545,
+        "fnr": 0.768,
+        "tp": 464,
+        "fp": 109,
+        "tn": 1891,
+        "fn": 1536,
+        "auc_roc": 0.5853,
+        "ece": 0.134
+      }
+    },
+    {
+      "name": "A7_no_safety_kw",
+      "description": "Remove safety-bypass keywords",
+      "removed_keywords": [
+        "safety",
+        "restrictions",
+        "bypass",
+        "override",
+        "ignore"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.5755,
+        "accuracy": 0.5755,
+        "precision": 0.7949,
+        "recall": 0.2035,
+        "f1": 0.324,
+        "mcc": 0.226,
+        "fpr": 0.0525,
+        "fnr": 0.7965,
+        "tp": 407,
+        "fp": 105,
+        "tn": 1895,
+        "fn": 1593,
+        "auc_roc": 0.5787,
+        "ece": 0.1222
+      }
+    },
+    {
+      "name": "A8_all_keywords",
+      "description": "Full model (all keywords)",
+      "removed_keywords": null,
+      "metrics": {
+        "balanced_accuracy": 0.6062,
+        "accuracy": 0.6062,
+        "precision": 0.7989,
+        "recall": 0.284,
+        "f1": 0.419,
+        "mcc": 0.2779,
+        "fpr": 0.0715,
+        "fnr": 0.716,
+        "tp": 568,
+        "fp": 143,
+        "tn": 1857,
+        "fn": 1432,
+        "auc_roc": 0.6189,
+        "ece": 0.1183
+      }
+    },
+    {
+      "name": "A9_strong_only",
+      "description": "Strong keywords only",
+      "removed_keywords": [
+        "pretend",
+        "hypothetical",
+        "output your",
+        "disregard",
+        "break guidelines",
+        "rules",
+        "instructions",
+        "mode",
+        "safety",
+        "restrictions",
+        "persona",
+        "roleplay",
+        "act as",
+        "explain",
+        "what is",
+        "how does",
+        "write a",
+        "create a",
+        "describe",
+        "compare",
+        "help me",
+        "please",
+        "thank you"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.6155,
+        "accuracy": 0.6155,
+        "precision": 0.8889,
+        "recall": 0.264,
+        "f1": 0.4071,
+        "mcc": 0.3248,
+        "fpr": 0.033,
+        "fnr": 0.736,
+        "tp": 528,
+        "fp": 66,
+        "tn": 1934,
+        "fn": 1472,
+        "auc_roc": 0.6153,
+        "ece": 0.0703
+      }
+    },
+    {
+      "name": "A10_medium_only",
+      "description": "Medium keywords only",
+      "removed_keywords": [
+        "ignore",
+        "override",
+        "bypass",
+        "jailbreak",
+        "system prompt",
+        "reveal",
+        "extract",
+        "decode",
+        "base64",
+        "admin",
+        "developer",
+        "do anything now",
+        "dan",
+        "unrestricted",
+        "no restrictions",
+        "explain",
+        "what is",
+        "how does",
+        "write a",
+        "create a",
+        "describe",
+        "compare",
+        "help me",
+        "please",
+        "thank you"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.5982,
+        "accuracy": 0.5982,
+        "precision": 0.7447,
+        "recall": 0.299,
+        "f1": 0.4267,
+        "mcc": 0.2453,
+        "fpr": 0.1025,
+        "fnr": 0.701,
+        "tp": 598,
+        "fp": 205,
+        "tn": 1795,
+        "fn": 1402,
+        "auc_roc": 0.5947,
+        "ece": 0.0235
+      }
+    },
+    {
+      "name": "A11_benign_only",
+      "description": "Benign keywords only (anti-detection)",
+      "removed_keywords": [
+        "ignore",
+        "override",
+        "bypass",
+        "jailbreak",
+        "system prompt",
+        "reveal",
+        "extract",
+        "decode",
+        "base64",
+        "admin",
+        "developer",
+        "do anything now",
+        "dan",
+        "unrestricted",
+        "no restrictions",
+        "pretend",
+        "hypothetical",
+        "output your",
+        "disregard",
+        "break guidelines",
+        "rules",
+        "instructions",
+        "mode",
+        "safety",
+        "restrictions",
+        "persona",
+        "roleplay",
+        "act as"
+      ],
+      "metrics": {
+        "balanced_accuracy": 0.5,
+        "accuracy": 0.5,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "mcc": 0.0,
+        "fpr": 0.0,
+        "fnr": 1.0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 2000,
+        "fn": 2000,
+        "auc_roc": 0.4579,
+        "ece": 0.1459
+      }
+    }
+  ],
+  "robustness": {
+    "obfuscation": {
+      "base64_encoding": {
+        "accuracy": 0.49,
+        "n_samples": 200,
+        "n_correct": 98
+      },
+      "rot13": {
+        "accuracy": 0.51,
+        "n_samples": 200,
+        "n_correct": 102
+      },
+      "character_substitution": {
+        "accuracy": 0.535,
+        "n_samples": 200,
+        "n_correct": 107
+      },
+      "whitespace_injection": {
+        "accuracy": 0.67,
+        "n_samples": 200,
+        "n_correct": 134
+      },
+      "url_encoding": {
+        "accuracy": 0.5,
+        "n_samples": 200,
+        "n_correct": 100
+      },
+      "multi_layer_encoding": {
+        "accuracy": 0.49,
+        "n_samples": 200,
+        "n_correct": 98
+      },
+      "overall_robustness_score": 0.5325
+    },
+    "multilingual": {
+      "german": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "dutch": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "swedish": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "french": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "spanish": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "italian": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "russian": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "polish": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "czech": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "chinese": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "japanese": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "korean": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "hindi": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "bengali": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "tamil": {
+        "accuracy": 0.68,
+        "n_samples": 50,
+        "n_correct": 34
+      },
+      "overall_multilingual_score": 0.68
+    },
+    "obfuscation_overall": 0.5325,
+    "multilingual_overall": 0.68
+  },
+  "baseline_comparison": {
+    "keyword_only": {
+      "balanced_accuracy": 0.6062,
+      "accuracy": 0.6062,
+      "precision": 0.7989,
+      "recall": 0.284,
+      "f1": 0.419,
+      "mcc": 0.2779,
+      "fpr": 0.0715,
+      "fnr": 0.716,
+      "tp": 568,
+      "fp": 143,
+      "tn": 1857,
+      "fn": 1432
+    },
+    "random": {
+      "balanced_accuracy": 0.4942,
+      "accuracy": 0.4943,
+      "precision": 0.4943,
+      "recall": 0.495,
+      "f1": 0.4946,
+      "mcc": -0.0115,
+      "fpr": 0.5065,
+      "fnr": 0.505,
+      "tp": 990,
+      "fp": 1013,
+      "tn": 987,
+      "fn": 1010
+    },
+    "majority_class": {
+      "balanced_accuracy": 0.5,
+      "accuracy": 0.5,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "mcc": 0.0,
+      "fpr": 0.0,
+      "fnr": 1.0,
+      "tp": 0,
+      "fp": 0,
+      "tn": 2000,
+      "fn": 2000
+    }
+  },
+  "latency_profiling": {
+    "keyword_score": {
+      "mean_ms": 0.0054,
+      "median_ms": 0.0034,
+      "p95_ms": 0.0095,
+      "p99_ms": 0.0516,
+      "min_ms": 0.0022,
+      "max_ms": 0.0584,
+      "n_samples": 100
+    },
+    "compute_text_idf_score": {
+      "mean_ms": 0.0074,
+      "median_ms": 0.0046,
+      "p95_ms": 0.0164,
+      "p99_ms": 0.0716,
+      "min_ms": 0.0028,
+      "max_ms": 0.0819,
+      "n_samples": 100
+    },
+    "compute_length_normalization": {
+      "mean_ms": 0.0003,
+      "median_ms": 0.0002,
+      "p95_ms": 0.0003,
+      "p99_ms": 0.0011,
+      "min_ms": 0.0001,
+      "max_ms": 0.0058,
+      "n_samples": 100
+    },
+    "compute_perplexity_score": {
+      "mean_ms": 0.0174,
+      "median_ms": 0.0112,
+      "p95_ms": 0.0301,
+      "p99_ms": 0.1476,
+      "min_ms": 0.008,
+      "max_ms": 0.2001,
+      "n_samples": 100
+    },
+    "compute_entropy_score": {
+      "mean_ms": 0.0127,
+      "median_ms": 0.0075,
+      "p95_ms": 0.0244,
+      "p99_ms": 0.1361,
+      "min_ms": 0.0046,
+      "max_ms": 0.1701,
+      "n_samples": 100
+    },
+    "compute_token_frequency_score": {
+      "mean_ms": 0.0045,
+      "median_ms": 0.0028,
+      "p95_ms": 0.0089,
+      "p99_ms": 0.0385,
+      "min_ms": 0.0021,
+      "max_ms": 0.0489,
+      "n_samples": 100
+    },
+    "compute_ngram_overlap_score": {
+      "mean_ms": 0.0155,
+      "median_ms": 0.0084,
+      "p95_ms": 0.027,
+      "p99_ms": 0.1889,
+      "min_ms": 0.0041,
+      "max_ms": 0.2132,
+      "n_samples": 100
+    }
+  },
+  "power_analysis": [
+    {
+      "effect_size": 0.05,
+      "power": 0.8,
+      "required_per_group": 1570,
+      "total_required": 3140
+    },
+    {
+      "effect_size": 0.05,
+      "power": 0.9,
+      "required_per_group": 2102,
+      "total_required": 4204
+    },
+    {
+      "effect_size": 0.05,
+      "power": 0.95,
+      "required_per_group": 2599,
+      "total_required": 5198
+    },
+    {
+      "effect_size": 0.1,
+      "power": 0.8,
+      "required_per_group": 393,
+      "total_required": 786
+    },
+    {
+      "effect_size": 0.1,
+      "power": 0.9,
+      "required_per_group": 526,
+      "total_required": 1052
+    },
+    {
+      "effect_size": 0.1,
+      "power": 0.95,
+      "required_per_group": 650,
+      "total_required": 1300
+    },
+    {
+      "effect_size": 0.2,
+      "power": 0.8,
+      "required_per_group": 99,
+      "total_required": 198
+    },
+    {
+      "effect_size": 0.2,
+      "power": 0.9,
+      "required_per_group": 132,
+      "total_required": 264
+    },
+    {
+      "effect_size": 0.2,
+      "power": 0.95,
+      "required_per_group": 163,
+      "total_required": 326
+    },
+    {
+      "effect_size": 0.3,
+      "power": 0.8,
+      "required_per_group": 44,
+      "total_required": 88
+    },
+    {
+      "effect_size": 0.3,
+      "power": 0.9,
+      "required_per_group": 59,
+      "total_required": 118
+    },
+    {
+      "effect_size": 0.3,
+      "power": 0.95,
+      "required_per_group": 73,
+      "total_required": 146
+    },
+    {
+      "effect_size": 0.5,
+      "power": 0.8,
+      "required_per_group": 16,
+      "total_required": 32
+    },
+    {
+      "effect_size": 0.5,
+      "power": 0.9,
+      "required_per_group": 22,
+      "total_required": 44
+    },
+    {
+      "effect_size": 0.5,
+      "power": 0.95,
+      "required_per_group": 26,
+      "total_required": 52
+    }
+  ],
+  "success_criteria": {
+    "balanced_accuracy_above_80": {
+      "target": ">= 0.80",
+      "actual": 0.6062,
+      "passed": false
+    },
+    "f1_above_75": {
+      "target": ">= 0.75",
+      "actual": 0.419,
+      "passed": false
+    },
+    "fpr_below_20": {
+      "target": "<= 0.20",
+      "actual": 0.0715,
+      "passed": true
+    },
+    "obfuscation_robustness_above_60": {
+      "target": ">= 0.60",
+      "actual": 0.5325,
+      "passed": "False"
+    },
+    "power_analysis_sufficient": {
+      "target": "n >= 2000 total",
+      "actual": 4000,
+      "passed": true
+    }
+  }
+}

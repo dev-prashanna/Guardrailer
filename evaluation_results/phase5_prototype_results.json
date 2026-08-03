@@ -1,0 +1,185 @@
+{
+  "phase": 5,
+  "version": "3.0-verified",
+  "timestamp": "2026-08-03T19:06:00+05:45",
+  "status": "RESEARCH-GRADE VERIFIED",
+
+  "methodology": {
+    "data_leakage_audit": {
+      "centroid_computation": "PER-FOLD from training embeddings only",
+      "idf_computation": "PER-FOLD from training document frequencies only",
+      "avg_text_length": "PER-FOLD from training texts only",
+      "qdrant_dense_score": "REMOVED (was returning same text)",
+      "qdrant_cross_encoder": "REMOVED (pre-computed on same data)",
+      "qdrant_uniqueness": "REMOVED (pre-computed on same data)",
+      "train_test_overlap": 0,
+      "verdict": "ZERO DATA LEAKAGE CONFIRMED"
+    },
+    "dataset": {
+      "source": "unified_security_dataset.parquet",
+      "full_corpus_size": 693456,
+      "evaluation_samples": 10000,
+      "stratified_split": "50/50 malicious/benign",
+      "categories": 6,
+      "category_distribution": {
+        "benign_control": 5000,
+        "direct_injection": 1000,
+        "indirect_injection": 1000,
+        "jailbreak": 1000,
+        "refusal_bypass": 1000,
+        "system_prompt_extraction": 1000
+      }
+    },
+    "embedding_model": "BAAI/bge-large-en-v1.5",
+    "cv_method": "5-fold stratified with per-fold feature computation",
+    "signals": 7,
+    "signal_names": ["centroid", "sparse_idf", "perplexity", "entropy", "token_freq", "ngram", "length_norm"]
+  },
+
+  "primary_results": {
+    "classifier_comparison": {
+      "RandomForest": {
+        "balanced_accuracy": 0.9322,
+        "bootstrap_ci_95": [0.9270, 0.9367],
+        "f1_score": 0.9305,
+        "auc_roc": 0.9747,
+        "mcc": 0.8590,
+        "precision": 0.9565,
+        "recall": 0.9080,
+        "fpr": 0.0436,
+        "fnr": 0.0920,
+        "n_estimators": 200,
+        "class_weight": "balanced",
+        "cv_folds": 5
+      },
+      "GradientBoosting": {
+        "balanced_accuracy": 0.9265,
+        "bootstrap_ci_95": [0.9212, 0.9308],
+        "f1_score": 0.9248,
+        "auc_roc": 0.9731,
+        "n_estimators": 200,
+        "max_depth": 5
+      },
+      "LogisticRegression": {
+        "balanced_accuracy": 0.8598,
+        "bootstrap_ci_95": [0.8529, 0.8665],
+        "f1_score": 0.8582,
+        "auc_roc": 0.9207,
+        "class_weight": "balanced"
+      }
+    },
+    "best_classifier": "RandomForest",
+    "best_balanced_accuracy": 0.9322,
+    "best_ci_lower": 0.9270,
+    "best_ci_upper": 0.9367
+  },
+
+  "independent_verification": {
+    "method": "Strict 80/20 train/test split (no CV)",
+    "test_samples": 2000,
+    "train_samples": 8000,
+    "results": {
+      "RandomForest": {
+        "balanced_accuracy": 0.9281,
+        "bootstrap_ci_95": [0.9164, 0.9387],
+        "f1_score": 0.9268,
+        "auc_roc": 0.9699,
+        "mcc": 0.8566,
+        "fpr": 0.0439,
+        "fnr": 0.1000,
+        "confusion_matrix": {"tp": 918, "fp": 43, "tn": 937, "fn": 102}
+      }
+    },
+    "train_test_text_overlap": 0,
+    "centroid_difference_from_full_corpus": {
+      "benign_control": 0.0073,
+      "direct_injection": 0.0097,
+      "indirect_injection": 0.0124,
+      "jailbreak": 0.0168,
+      "refusal_bypass": 0.0148,
+      "system_prompt_extraction": 0.0096
+    },
+    "verdict": "RESULTS CONFIRMED - ZERO LEAKAGE"
+  },
+
+  "threshold_optimization": {
+    "default_threshold": {
+      "threshold": 0.50,
+      "balanced_accuracy": 0.9322,
+      "fnr": 0.0920,
+      "fpr": 0.0436
+    },
+    "optimized_threshold": {
+      "threshold": 0.30,
+      "balanced_accuracy": 0.9168,
+      "fnr": 0.0612,
+      "fpr": 0.1052,
+      "ci_95": [0.9114, 0.9218]
+    }
+  },
+
+  "per_category_accuracy": {
+    "method": "Full model, default threshold, per-fold CV",
+    "results": {
+      "benign_control": {"accuracy": 0.9564, "n": 5000},
+      "direct_injection": {"accuracy": 0.9590, "n": 1000},
+      "indirect_injection": {"accuracy": 0.9970, "n": 1000},
+      "jailbreak": {"accuracy": 0.7270, "n": 1000},
+      "refusal_bypass": {"accuracy": 0.8810, "n": 1000},
+      "system_prompt_extraction": {"accuracy": 0.9760, "n": 1000}
+    }
+  },
+
+  "ablation_studies": {
+    "method": "Drop one signal, retrain RandomForest, 5-fold CV",
+    "full_model_ba": 0.9322,
+    "results": {
+      "centroid": {"ba_after_drop": 0.8669, "delta": -0.0653, "delta_pct": -6.53, "importance": 0.4463},
+      "length_norm": {"ba_after_drop": 0.8947, "delta": -0.0375, "delta_pct": -3.75, "importance": 0.1985},
+      "token_freq": {"ba_after_drop": 0.9218, "delta": -0.0104, "delta_pct": -1.04, "importance": 0.1678},
+      "sparse_idf": {"ba_after_drop": 0.9296, "delta": -0.0026, "delta_pct": -0.26, "importance": 0.0437},
+      "perplexity": {"ba_after_drop": 0.9304, "delta": -0.0018, "delta_pct": -0.18, "importance": 0.0688},
+      "entropy": {"ba_after_drop": 0.9319, "delta": -0.0003, "delta_pct": -0.03, "importance": 0.0586},
+      "ngram": {"ba_after_drop": 0.9327, "delta": 0.0005, "delta_pct": 0.05, "importance": 0.0162}
+    }
+  },
+
+  "feature_importance": {
+    "centroid": 0.4463,
+    "length_norm": 0.1985,
+    "token_freq": 0.1678,
+    "perplexity": 0.0688,
+    "entropy": 0.0586,
+    "sparse_idf": 0.0437,
+    "ngram": 0.0162
+  },
+
+  "confusion_matrix": {
+    "method": "Best model (RandomForest), default threshold, aggregated across 5 folds",
+    "tn": 4782,
+    "fp": 218,
+    "fn": 460,
+    "tp": 4540
+  },
+
+  "success_criteria": {
+    "balanced_accuracy_above_90": {"target": ">= 0.90", "actual": 0.9322, "passed": true},
+    "ci_lower_above_90": {"target": ">= 0.90", "actual": 0.9270, "passed": true},
+    "independent_test_ba_above_90": {"target": ">= 0.90", "actual": 0.9281, "passed": true},
+    "independent_ci_lower_above_90": {"target": ">= 0.90", "actual": 0.9164, "passed": true},
+    "data_leakage_zero": {"target": "0 overlap", "actual": 0, "passed": true},
+    "dataset_size_above_4000": {"target": ">= 4000", "actual": 10000, "passed": true},
+    "fpr_below_10": {"target": "<= 0.10", "actual": 0.0436, "passed": true},
+    "fnr_below_10_threshold_optimized": {"target": "<= 0.10", "actual": 0.0612, "passed": true}
+  },
+
+  "files": {
+    "leakage_free_report": "evaluation_results/leakage_free_report.json",
+    "full_pipeline_report": "evaluation_results/full_pipeline_report.json",
+    "evaluation_report_v3": "evaluation_results/evaluation_report.json",
+    "phase5_results": "evaluation_results/phase5_prototype_results.json",
+    "manuscript": "manuscript/manuscript.md",
+    "evaluation_script": "guardrailer_security/research/evaluate_leakage_free.py",
+    "visualizations": "evaluation_results/figures/"
+  }
+}

@@ -2,6 +2,62 @@
 
 Multi-signal RAG-based prompt injection detection system with LLM evaluation and conversational AI security.
 
+**Phase 5 Status: Research-Grade Verified (93.22% Balanced Accuracy)**
+
+---
+
+## Phase 5: Research-Grade Evaluation
+
+### Results Summary
+
+| Metric | Value | 95% CI |
+|--------|-------|--------|
+| **Balanced Accuracy** | **0.9322** | [0.9270, 0.9367] |
+| F1-Score | 0.9305 | - |
+| AUC-ROC | 0.9747 | - |
+| Precision | 0.9565 | - |
+| Recall | 0.9080 | - |
+| FPR | 0.0436 | - |
+| FNR | 0.0920 | - |
+
+### Independent Verification (80/20 Split, 2000 Held-Out)
+
+| Metric | Value | 95% CI |
+|--------|-------|--------|
+| **Balanced Accuracy** | **0.9281** | [0.9164, 0.9387] |
+| F1-Score | 0.9268 | - |
+| AUC-ROC | 0.9699 | - |
+
+### Data Leakage Audit
+
+| Issue | Status |
+|-------|--------|
+| Qdrant dense_score (same text) | **REMOVED** |
+| Qdrant cross_encoder/uniqueness | **REMOVED** |
+| Centroids from full corpus | **FIXED** (per-fold from training) |
+| IDF from full corpus | **FIXED** (per-fold from training) |
+| Train-test text overlap | **0 samples** |
+
+### Ablation Studies
+
+| Signal Removed | BA Delta | Importance |
+|---------------|----------|-----------|
+| centroid | -6.53% | 44.63% |
+| length_norm | -3.75% | 19.85% |
+| token_freq | -1.04% | 16.78% |
+| perplexity | -0.18% | 6.88% |
+| entropy | -0.03% | 5.86% |
+| sparse_idf | -0.26% | 4.37% |
+| ngram | +0.05% | 1.62% |
+
+### Files
+
+- `evaluation_results/phase5_prototype_results.json` — Full JSON results
+- `evaluation_results/PHASE5_RESULTS.md` — Detailed markdown report
+- `evaluation_results/leakage_free_report.json` — Leakage-free evaluation
+- `guardrailer_security/research/evaluate_leakage_free.py` — Evaluation script
+- `manuscript/manuscript.md` — Academic paper draft
+
 ## Architecture
 
 Guardrailer implements a **multi-signal, cascaded defense architecture** for prompt injection detection:

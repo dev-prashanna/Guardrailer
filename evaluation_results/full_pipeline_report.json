@@ -1,0 +1,354 @@
+{
+  "metadata": {
+    "timestamp": "2026-08-03 18:45:46",
+    "n_samples": 4000,
+    "n_features": 10,
+    "feature_names": [
+      "dense",
+      "sparse_idf",
+      "centroid",
+      "cross_encoder",
+      "perplexity",
+      "entropy",
+      "token_frequency",
+      "ngram_overlap",
+      "uniqueness",
+      "length_norm"
+    ],
+    "embedding_model": "BAAI/bge-large-en-v1.5",
+    "qdrant_collection": "guardrailer_security_enhanced",
+    "qdrant_points": 693456,
+    "dataset_size": 693456,
+    "random_seed": 42
+  },
+  "classifiers": {
+    "LogisticRegression": {
+      "balanced_accuracy": 0.8625,
+      "balanced_accuracy_std": 0.016393596310754974,
+      "f1": 0.8591190864824629,
+      "f1_std": 0.017456091858999313,
+      "mcc": 0.7258894491119217,
+      "mcc_std": 0.032549324194751074,
+      "auc_roc": 0.9196899999999999,
+      "auc_roc_std": 0.009166225027240009,
+      "precision": 0.8803622356259458,
+      "precision_std": 0.01568550366918659,
+      "recall": 0.8390000000000001,
+      "recall_std": 0.021307275752662513,
+      "fpr": 0.11400000000000002,
+      "fpr_std": 0.014882876066137217,
+      "fnr": 0.16099999999999998,
+      "fnr_std": 0.021307275752662523,
+      "balanced_accuracy_ci_low": 0.8517985572030605,
+      "balanced_accuracy_ci_high": 0.8725833686189388
+    },
+    "RandomForest": {
+      "balanced_accuracy": 0.9414999999999999,
+      "balanced_accuracy_std": 0.01186907747046926,
+      "f1": 0.9401349717533147,
+      "f1_std": 0.012204294520666592,
+      "mcc": 0.8839996847915049,
+      "mcc_std": 0.023710977012247655,
+      "auc_roc": 0.9821837500000001,
+      "auc_roc_std": 0.003468998527132876,
+      "precision": 0.9623936281215123,
+      "precision_std": 0.013497668888865957,
+      "recall": 0.9190000000000002,
+      "recall_std": 0.015132745950421567,
+      "fpr": 0.036,
+      "fpr_std": 0.013095800853708794,
+      "fnr": 0.08099999999999999,
+      "fnr_std": 0.015132745950421555,
+      "balanced_accuracy_ci_low": 0.9341816490927725,
+      "balanced_accuracy_ci_high": 0.9488139816222083
+    },
+    "GradientBoosting": {
+      "balanced_accuracy": 0.9375,
+      "balanced_accuracy_std": 0.012298373876248846,
+      "f1": 0.9362611786568367,
+      "f1_std": 0.012668675333900661,
+      "mcc": 0.8756754892225184,
+      "mcc_std": 0.024486533858306972,
+      "auc_roc": 0.9814812500000001,
+      "auc_roc_std": 0.005182927201398836,
+      "precision": 0.9547789735363148,
+      "precision_std": 0.011712657142933288,
+      "recall": 0.9184999999999999,
+      "recall_std": 0.015132745950421534,
+      "fpr": 0.0435,
+      "fpr_std": 0.011247221879201992,
+      "fnr": 0.08149999999999999,
+      "fnr_std": 0.015132745950421555,
+      "balanced_accuracy_ci_low": 0.9298998164036364,
+      "balanced_accuracy_ci_high": 0.9442644598769009
+    },
+    "PretrainedLogisticBaseline": {
+      "balanced_accuracy": 0.5992500000000001,
+      "f1": 0.6951891994675794,
+      "mcc": 0.2554695967875172,
+      "auc_roc": 0.6742131249999999,
+      "precision": 0.5609082540656644,
+      "recall": 0.914,
+      "fpr": 0.7155,
+      "fnr": 0.086,
+      "balanced_accuracy_ci_low": 0.5884941088919874,
+      "balanced_accuracy_ci_high": 0.610917751490056
+    }
+  },
+  "best_classifier": "RandomForest",
+  "best_balanced_accuracy": 0.9414999999999999,
+  "target_met": true,
+  "ablation": {
+    "dense": {
+      "mean_balanced_accuracy": 0.9397499999999999,
+      "delta": 0.0017500000000000293,
+      "delta_pct": 0.17500000000000293
+    },
+    "sparse_idf": {
+      "mean_balanced_accuracy": 0.9424999999999999,
+      "delta": -0.0010000000000000009,
+      "delta_pct": -0.10000000000000009
+    },
+    "centroid": {
+      "mean_balanced_accuracy": 0.9272500000000001,
+      "delta": 0.014249999999999763,
+      "delta_pct": 1.4249999999999763
+    },
+    "cross_encoder": {
+      "mean_balanced_accuracy": 0.9357500000000002,
+      "delta": 0.0057499999999997,
+      "delta_pct": 0.57499999999997
+    },
+    "perplexity": {
+      "mean_balanced_accuracy": 0.94275,
+      "delta": -0.0012500000000000844,
+      "delta_pct": -0.12500000000000844
+    },
+    "entropy": {
+      "mean_balanced_accuracy": 0.9414999999999999,
+      "delta": 0.0,
+      "delta_pct": 0.0
+    },
+    "token_frequency": {
+      "mean_balanced_accuracy": 0.93875,
+      "delta": 0.002749999999999919,
+      "delta_pct": 0.2749999999999919
+    },
+    "ngram_overlap": {
+      "mean_balanced_accuracy": 0.9397500000000001,
+      "delta": 0.0017499999999998073,
+      "delta_pct": 0.17499999999998073
+    },
+    "uniqueness": {
+      "mean_balanced_accuracy": 0.931,
+      "delta": 0.010499999999999843,
+      "delta_pct": 1.0499999999999843
+    },
+    "length_norm": {
+      "mean_balanced_accuracy": 0.93,
+      "delta": 0.011499999999999844,
+      "delta_pct": 1.1499999999999844
+    }
+  },
+  "feature_importance": {
+    "dense": 0.009738516240547338,
+    "sparse_idf": 0.020531273399741173,
+    "centroid": 0.3674668440667337,
+    "cross_encoder": 0.12262100372228206,
+    "perplexity": 0.036081439047430476,
+    "entropy": 0.031413563724844766,
+    "token_frequency": 0.1569042680972762,
+    "ngram_overlap": 0.008194146651076359,
+    "uniqueness": 0.11209699958037983,
+    "length_norm": 0.1349519454696883
+  },
+  "feature_statistics": {
+    "dense": {
+      "mean": 0.9985464215278625,
+      "std": 0.016974331811070442,
+      "min": 0.6558322906494141,
+      "max": 1.0
+    },
+    "sparse_idf": {
+      "mean": 0.014045489951968193,
+      "std": 0.02929084002971649,
+      "min": 0.0,
+      "max": 0.37233787775039673
+    },
+    "centroid": {
+      "mean": 0.7412047386169434,
+      "std": 0.08578125387430191,
+      "min": 0.4024261236190796,
+      "max": 0.9155651330947876
+    },
+    "cross_encoder": {
+      "mean": 0.00464377598837018,
+      "std": 0.04095733165740967,
+      "min": 1.045154840539908e-05,
+      "max": 0.898944079875946
+    },
+    "perplexity": {
+      "mean": 0.6449458003044128,
+      "std": 0.04580935463309288,
+      "min": 0.0,
+      "max": 0.9728348851203918
+    },
+    "entropy": {
+      "mean": 0.773414134979248,
+      "std": 0.02304234355688095,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "token_frequency": {
+      "mean": 0.3354792892932892,
+      "std": 0.11657583713531494,
+      "min": 0.0,
+      "max": 0.875
+    },
+    "ngram_overlap": {
+      "mean": 0.011122925207018852,
+      "std": 0.03675610199570656,
+      "min": 0.0,
+      "max": 0.32777777314186096
+    },
+    "uniqueness": {
+      "mean": 0.08667554706335068,
+      "std": 0.09872335195541382,
+      "min": 3.4434387998771854e-06,
+      "max": 0.7623803615570068
+    },
+    "length_norm": {
+      "mean": 0.9297346472740173,
+      "std": 0.16234132647514343,
+      "min": 0.14217805862426758,
+      "max": 1.998810052871704
+    }
+  },
+  "signal_correlations": {
+    "dense": {
+      "dense": 1.0,
+      "sparse_idf": 0.01577539428958548,
+      "centroid": 0.10701001715424657,
+      "cross_encoder": 0.006597037846951848,
+      "perplexity": 0.05703862664674433,
+      "entropy": 0.012745505658602482,
+      "token_frequency": 0.03803855897592962,
+      "ngram_overlap": 0.020875997127163818,
+      "uniqueness": -0.10453639873619429,
+      "length_norm": -0.03791590305812581
+    },
+    "sparse_idf": {
+      "dense": 0.01577539428958548,
+      "sparse_idf": 1.0,
+      "centroid": 0.252528747095447,
+      "cross_encoder": 0.009276997181235926,
+      "perplexity": -0.11876945471246024,
+      "entropy": 0.17376302245110076,
+      "token_frequency": 0.3297668499990708,
+      "ngram_overlap": 0.3801705830667964,
+      "uniqueness": 0.0038211482991793895,
+      "length_norm": 0.5338322381428269
+    },
+    "centroid": {
+      "dense": 0.10701001715424659,
+      "sparse_idf": 0.25252874709544704,
+      "centroid": 1.0,
+      "cross_encoder": 0.04037841265863584,
+      "perplexity": 0.31488360262058024,
+      "entropy": 0.17672068146340109,
+      "token_frequency": 0.45012329853795474,
+      "ngram_overlap": 0.27021966148145915,
+      "uniqueness": -0.6935705000771408,
+      "length_norm": -0.10863598141591506
+    },
+    "cross_encoder": {
+      "dense": 0.006597037846951847,
+      "sparse_idf": 0.009276997181235926,
+      "centroid": 0.04037841265863584,
+      "cross_encoder": 1.0,
+      "perplexity": -0.046540400361549446,
+      "entropy": -0.002654882164962316,
+      "token_frequency": -0.003932489841142537,
+      "ngram_overlap": 0.03282891395152441,
+      "uniqueness": -0.005968377087230493,
+      "length_norm": 0.05440146058928436
+    },
+    "perplexity": {
+      "dense": 0.05703862664674433,
+      "sparse_idf": -0.11876945471246025,
+      "centroid": 0.31488360262058024,
+      "cross_encoder": -0.04654040036154944,
+      "perplexity": 0.9999999999999999,
+      "entropy": 0.5334635999517111,
+      "token_frequency": 0.4587411156014708,
+      "ngram_overlap": 0.035134373383394715,
+      "uniqueness": -0.3108429708232862,
+      "length_norm": -0.37651389542638064
+    },
+    "entropy": {
+      "dense": 0.012745505658602482,
+      "sparse_idf": 0.17376302245110078,
+      "centroid": 0.17672068146340109,
+      "cross_encoder": -0.002654882164962316,
+      "perplexity": 0.5334635999517111,
+      "entropy": 1.0,
+      "token_frequency": 0.20793035572545013,
+      "ngram_overlap": 0.03658419835793957,
+      "uniqueness": -0.05862987482407849,
+      "length_norm": 0.2508721403923469
+    },
+    "token_frequency": {
+      "dense": 0.03803855897592962,
+      "sparse_idf": 0.32976684999907085,
+      "centroid": 0.45012329853795474,
+      "cross_encoder": -0.0039324898411425375,
+      "perplexity": 0.45874111560147074,
+      "entropy": 0.2079303557254501,
+      "token_frequency": 1.0,
+      "ngram_overlap": 0.24605772708632834,
+      "uniqueness": -0.21130163928862472,
+      "length_norm": -0.025517861406541508
+    },
+    "ngram_overlap": {
+      "dense": 0.020875997127163818,
+      "sparse_idf": 0.3801705830667964,
+      "centroid": 0.2702196614814591,
+      "cross_encoder": 0.03282891395152441,
+      "perplexity": 0.035134373383394715,
+      "entropy": 0.03658419835793957,
+      "token_frequency": 0.24605772708632834,
+      "ngram_overlap": 0.9999999999999998,
+      "uniqueness": -0.1196030025961807,
+      "length_norm": 0.041522018625973454
+    },
+    "uniqueness": {
+      "dense": -0.10453639873619427,
+      "sparse_idf": 0.0038211482991793895,
+      "centroid": -0.6935705000771408,
+      "cross_encoder": -0.005968377087230494,
+      "perplexity": -0.3108429708232862,
+      "entropy": -0.05862987482407849,
+      "token_frequency": -0.2113016392886247,
+      "ngram_overlap": -0.11960300259618069,
+      "uniqueness": 1.0,
+      "length_norm": 0.3352216384721383
+    },
+    "length_norm": {
+      "dense": -0.03791590305812581,
+      "sparse_idf": 0.533832238142827,
+      "centroid": -0.10863598141591506,
+      "cross_encoder": 0.05440146058928437,
+      "perplexity": -0.37651389542638064,
+      "entropy": 0.25087214039234684,
+      "token_frequency": -0.025517861406541505,
+      "ngram_overlap": 0.041522018625973454,
+      "uniqueness": 0.3352216384721383,
+      "length_norm": 0.9999999999999998
+    }
+  },
+  "ablation_summary": {
+    "most_important_signal": "centroid",
+    "least_important_signal": "perplexity",
+    "total_delta_if_all_dropped": 0.04599999999999882
+  }
+}
