@@ -106,6 +106,21 @@ Actual Malicious        108 (FN)           11 (TP)
 
 ## Failure Root Cause
 
+### Critical Data Mismatch (Primary)
+
+The embeddings and Qdrant payloads are from **completely different datasets** with zero ID overlap:
+
+| | Original Dataset | Ingested into Qdrant |
+|---|---|---|
+| File | `guardrailer_dataset_v1.parquet` | `enhanced_payloads.parquet` (older) |
+| Rows | 722,842 | 693,456 |
+| Malicious | 59.9% | **84.0%** |
+| ID Overlap | — | **0 (ZERO)** |
+
+The embeddings (722K) were generated from the original 60/40 dataset. The Qdrant payloads (693K) are from an older pipeline run with 84/16 split. They don't correspond to each other — search returns wrong payloads, scoring signals are misaligned.
+
+### Embedding Space Collapse (Secondary)
+
 **Centroid similarity = 1.0000** — the malicious and safe centroids are mathematically identical in the embedding space. The `bge-large-en-v1.5` model embeds both classes into the same region because it optimizes for semantic similarity, not safety classification.
 
 ## Comparison: Hybrid Lightweight Scorer
@@ -124,10 +139,10 @@ Actual Malicious        108 (FN)           11 (TP)
 
 The embedding-based scoring pipeline **failed** because:
 
-1. General-purpose embeddings don't separate safe from malicious prompts
-2. All 11 scoring signals are weak discriminators
-3. Pattern matching only catches 6% of attacks
-4. Score distributions are identical across classes
+1. **Data provenance bug** — embeddings (722K, 60/40 split) and Qdrant payloads (693K, 84/16 split) are from different datasets with zero ID overlap. Search returns wrong payloads, scoring signals are misaligned.
+2. **Embedding model doesn't understand security** — general-purpose `bge-large-en-v1.5` maps safe and malicious prompts to identical vectors (centroid similarity = 1.0). The model optimizes for semantic similarity, not safety classification.
+3. **All 11 scoring signals are weak discriminators** — because the embedding space doesn't separate classes, every signal derived from it is noise. Maximum signal difference is 0.036 (centroid), below any useful threshold.
+4. **Pattern matching only catches 6% of attacks** — the dataset's attack sophistication exceeds regex capabilities. 94% of attacks are natural-language variants that blend with safe prompts.
 
 **Recommendation:** Use the hybrid lightweight scorer (84% F1, 2.78MB) as the primary classifier. Keep embeddings for RAG retrieval only.
 
