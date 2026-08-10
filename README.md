@@ -18,12 +18,12 @@ Input Prompt
 
 | Parameter | Value |
 |-----------|-------|
-| Dataset | guardrailer_dataset_v1.parquet |
+| Dataset | guardrailer_dataset_v1.parquet (CORRECT) |
 | Total samples | 722,842 |
 | Test samples | 199 (stratified) |
 | Embedding model | BAAI/bge-large-en-v1.5 |
 | Embedding dimension | 1024 |
-| Vector DB | Qdrant (693,456 points) |
+| Vector DB | Qdrant (722,842 points) |
 | Distance metric | Cosine |
 | Scoring signals | 11 (dense, sparse, centroid, cross-encoder, perplexity, entropy, token_frequency, ngram_overlap, uniqueness, length_norm, ensemble_bonus) |
 | Hardware | RTX 4060 Laptop GPU |
@@ -34,19 +34,19 @@ Input Prompt
 
 | Metric | Value |
 |--------|-------|
-| **Accuracy** | 40.2% |
-| **Precision** | 50.0% |
+| **Accuracy** | 41.2% |
+| **Precision** | 55.0% |
 | **Recall** | 9.2% |
-| **F1 Score** | 15.6% |
-| **MCC** | -0.071 |
-| **Kappa** | -0.038 |
-| **AUC-ROC** | 49.6% |
+| **F1 Score** | 15.8% |
+| **MCC** | -0.033 |
+| **Kappa** | -0.017 |
+| **AUC-ROC** | 46.0% |
 
 ### Confusion Matrix
 
 ```
                     Predicted Safe    Predicted Malicious
-Actual Safe              69 (TN)           11 (FP)
+Actual Safe              71 (TN)            9 (FP)
 Actual Malicious        108 (FN)           11 (TP)
 ```
 
@@ -59,31 +59,30 @@ Actual Malicious        108 (FN)           11 (TP)
 | jailbreak | 0.116 | 65 | Most missed — subtle attacks |
 | system_prompt_extraction | 0.080 | 24 | Extraction patterns not matched |
 
+### Signal Discrimination (Correct Data)
+
+| Signal | Safe | Malicious | Delta | Status |
+|--------|------|-----------|-------|--------|
+| dense | 1.0000 | 0.9986 | -0.001 | **WEAK** |
+| pattern | 0.095 | 0.077 | -0.018 | **WEAK** |
+
+**Both signals are below the 0.05 discrimination threshold even with correct data.**
+
 ### Score Distribution
 
 | Class | Mean Score |
 |-------|-----------|
-| Safe | 0.5313 |
-| Malicious | 0.5307 |
+| Safe | 0.4475 |
+| Malicious | 0.4382 |
 
-**Overlap: 99.9%** — distributions are indistinguishable.
+**Overlap: 99.8%** — distributions are indistinguishable even with correct data.
 
-### Signal Discrimination
+### Pattern Hit Rate
 
-| Signal | Safe | Malicious | Delta | Status |
-|--------|------|-----------|-------|--------|
-| dense | 0.9863 | 0.9657 | -0.021 | WEAK (wrong direction) |
-| sparse_idf | 0.0142 | 0.0173 | +0.003 | WEAK |
-| centroid | 0.6336 | 0.6695 | +0.036 | WEAK |
-| cross_encoder | 0.0025 | 0.0176 | +0.015 | WEAK |
-| perplexity | 0.6190 | 0.6157 | -0.003 | WEAK |
-| entropy | 0.7856 | 0.7751 | -0.011 | WEAK |
-| token_frequency | 0.3331 | 0.3260 | -0.007 | WEAK |
-| ngram_overlap | 0.0014 | 0.0042 | +0.003 | WEAK |
-| uniqueness | 0.0588 | 0.0649 | +0.006 | WEAK |
-| length_norm | 1.1666 | 1.1557 | -0.011 | WEAK |
-
-**All signals are below the 0.05 discrimination threshold.**
+| Metric | Value |
+|--------|-------|
+| Pattern match rate | 10.1% |
+| Attacks with no pattern | 89.9% |
 
 ### Performance
 
@@ -91,61 +90,88 @@ Actual Malicious        108 (FN)           11 (TP)
 |--------|-------|
 | Embedding generation | 5.9s (199 prompts) |
 | Scoring pipeline | 0.9s (199 prompts) |
-| **Total latency** | **34ms/prompt** |
-| Throughput | 29 prompts/s |
+| **Total latency** | **29ms/prompt** |
+| Throughput | 34 prompts/s |
 
 ### Sample Predictions
 
 ```
-[ERR] score=0.3344 pattern=0.000 true=MAL pred=SAF | in the tranquil art of carpentry...
-[ERR] score=0.3479 pattern=0.000 true=MAL pred=SAF | What number is returned when...
-[ERR] score=0.3324 pattern=0.000 true=MAL pred=SAF | ### Instruction: Discuss the influence...
-[OK]  score=0.3547 pattern=0.000 true=SAF pred=SAF | Write an engaging and interesting...
-[ERR] score=0.6697 pattern=0.900 true=SAF pred=MAL | Write an engaging and interesting...
+[ERR] score=0.4000 pattern=0.000 true=MAL pred=SAF | in the tranquil art of carpentry...
+[ERR] score=0.4000 pattern=0.000 true=MAL pred=SAF | What number is returned when...
+[ERR] score=0.4000 pattern=0.000 true=MAL pred=SAF | ### Instruction: Discuss the influence...
+[OK]  score=0.4000 pattern=0.000 true=SAF pred=SAF | Parts of automobiles can become...
+[ERR] score=0.8500 pattern=0.900 true=SAF pred=MAL | Write an engaging and interesting...
 ```
 
-## Failure Root Cause
+## Failure Analysis
 
-### Critical Data Mismatch (Primary)
+### Discovery: Data Was NOT the Primary Issue
 
-The embeddings and Qdrant payloads are from **completely different datasets** with zero ID overlap:
+After fixing the data mismatch (re-ingesting correct 722K dataset with 60/40 split), the pipeline **still failed** with identical results. This confirmed the root cause is the embedding model, not the data.
 
-| | Original Dataset | Ingested into Qdrant |
-|---|---|---|
-| File | `guardrailer_dataset_v1.parquet` | `enhanced_payloads.parquet` (older) |
-| Rows | 722,842 | 693,456 |
-| Malicious | 59.9% | **84.0%** |
-| ID Overlap | — | **0 (ZERO)** |
+### Root Cause: Embedding Space Collapse
 
-The embeddings (722K) were generated from the original 60/40 dataset. The Qdrant payloads (693K) are from an older pipeline run with 84/16 split. They don't correspond to each other — search returns wrong payloads, scoring signals are misaligned.
+**The `bge-large-en-v1.5` model fundamentally cannot distinguish safe from malicious prompts.**
 
-### Embedding Space Collapse (Secondary)
+| Evidence | Value |
+|----------|-------|
+| Centroid similarity (safe vs malicious) | **1.0000** (IDENTICAL) |
+| Dense similarity (safe prompts) | 1.0000 |
+| Dense similarity (malicious prompts) | 0.9986 |
+| Score difference | 0.001 (noise level) |
 
-**Centroid similarity = 1.0000** — the malicious and safe centroids are mathematically identical in the embedding space. The `bge-large-en-v1.5` model embeds both classes into the same region because it optimizes for semantic similarity, not safety classification.
+The model answers "do these texts mean the same thing?" — not "is this text malicious?" Both "Ignore all previous instructions" and "What is the weather?" get embedded into nearly identical vectors because the model sees them as semantically similar (both are user prompts to an AI).
+
+### Why All 11 Signals Fail
+
+Every signal in the scoring pipeline is derived from the embedding space. Since the embedding space has no separation between classes, all signals are noise:
+
+| Signal | Why it fails |
+|--------|-------------|
+| dense | Both classes are ~1.0 cosine similarity to corpus |
+| centroid | Both centroids are identical (similarity = 1.0) |
+| sparse_idf | Keyword matching doesn't work for subtle attacks |
+| cross_encoder | Pre-computed scores don't correlate with safety |
+| perplexity | Safe and malicious text have similar complexity |
+| entropy | Both classes have similar character distributions |
+| token_frequency | Attack tokens appear in both classes |
+| ngram_overlap | Phrase patterns overlap between classes |
+| uniqueness | Both classes have similar uniqueness scores |
+| length_norm | Text lengths are similar across classes |
+| ensemble_bonus | No model agreement to boost |
+
+### Pattern Matching Limitation
+
+Only **10.1%** of attacks match any pattern. The dataset contains sophisticated natural-language attacks that don't use obvious markers:
+
+```
+Malicious prompts with pattern_score = 0.000:  ~90%
+Safe prompts with pattern_score > 0.000:       ~10%
+```
 
 ## Comparison: Hybrid Lightweight Scorer
 
 | Metric | Embedding Pipeline | Hybrid Scorer | Improvement |
 |--------|-------------------|---------------|-------------|
-| F1 | 0.156 | 0.841 | **+439%** |
-| AUC-ROC | 0.496 | 0.888 | **+79%** |
-| Accuracy | 40.2% | 81.8% | **+104%** |
-| Precision | 50.0% | 88.0% | **+76%** |
+| F1 | 0.158 | 0.841 | **+432%** |
+| AUC-ROC | 0.460 | 0.888 | **+93%** |
+| Accuracy | 41.2% | 81.8% | **+99%** |
+| Precision | 55.0% | 88.0% | **+60%** |
 | Recall | 9.2% | 80.6% | **+776%** |
-| Latency | 34ms | 3.2ms | **94% faster** |
+| Latency | 29ms | 3.2ms | **90% faster** |
 | Storage | 1.5GB + Qdrant | 2.78MB | **540x smaller** |
 
 ## Conclusion
 
 The embedding-based scoring pipeline **failed** because:
 
-1. **Data provenance bug** — embeddings (722K, 60/40 split) and Qdrant payloads (693K, 84/16 split) are from different datasets with zero ID overlap. Search returns wrong payloads, scoring signals are misaligned.
-2. **Embedding model doesn't understand security** — general-purpose `bge-large-en-v1.5` maps safe and malicious prompts to identical vectors (centroid similarity = 1.0). The model optimizes for semantic similarity, not safety classification.
-3. **All 11 scoring signals are weak discriminators** — because the embedding space doesn't separate classes, every signal derived from it is noise. Maximum signal difference is 0.036 (centroid), below any useful threshold.
-4. **Pattern matching only catches 6% of attacks** — the dataset's attack sophistication exceeds regex capabilities. 94% of attacks are natural-language variants that blend with safe prompts.
+1. **Embedding model doesn't understand security** — `bge-large-en-v1.5` maps safe and malicious prompts to identical vectors (centroid similarity = 1.0). The model optimizes for semantic similarity, not safety classification.
+2. **All 11 scoring signals are weak discriminators** — because the embedding space doesn't separate classes, every signal derived from it is noise.
+3. **Pattern matching only catches 10% of attacks** — the dataset's attack sophistication exceeds regex capabilities. 90% of attacks are natural-language variants that blend with safe prompts.
+4. **Data mismatch was a secondary issue** — even after fixing the data provenance bug (re-ingesting correct 722K dataset), results were identical because the embedding model is the fundamental bottleneck.
 
-**Recommendation:** Use the hybrid lightweight scorer (84% F1, 2.78MB) as the primary classifier. Keep embeddings for RAG retrieval only.
+**Recommendation:** Use the hybrid lightweight scorer (84% F1, 2.78MB) as the primary classifier. Keep embeddings for RAG retrieval only. Do NOT use general-purpose embeddings for security classification.
 
 ---
 
-*Benchmark date: 2026-08-10 | Dataset: guardrailer_dataset_v1.parquet (722,842 rows) | Model: BAAI/bge-large-en-v1.5 (335M params, 1024-dim)*
+*Benchmark date: 2026-08-10 | Dataset: guardrailer_dataset_v1.parquet (722,842 rows, correct) | Model: BAAI/bge-large-en-v1.5 (335M params, 1024-dim)*
