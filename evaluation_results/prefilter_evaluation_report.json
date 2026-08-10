@@ -1,0 +1,83 @@
+{
+  "timestamp": "2026-08-06 05:16:22",
+  "methodology": {
+    "description": "Phase 5 leakage-free evaluation with Tier-1 pre-filter",
+    "n_samples": 10000,
+    "n_folds": 5,
+    "signals": 7,
+    "feature_names": [
+      "centroid",
+      "sparse_idf",
+      "perplexity",
+      "entropy",
+      "token_freq",
+      "ngram",
+      "length_norm"
+    ],
+    "classifier": "RandomForest",
+    "prefilter": {
+      "type": "exact-phrase + regex pattern matching",
+      "threshold": 0.7,
+      "description": "Fast pre-filter for short, simple attacks (Tier 1) that evade RF"
+    }
+  },
+  "results_rf_only": {
+    "balanced_accuracy": 0.9467,
+    "per_tier_detection_rate": {
+      "0": 0.0384,
+      "1": 0.9277,
+      "2": 0.9681,
+      "3": 0.992,
+      "4": 0.9412
+    },
+    "per_category_accuracy": {
+      "benign_control": 0.9616,
+      "direct_injection": 0.955,
+      "indirect_injection": 0.9971,
+      "jailbreak": 0.7175,
+      "refusal_bypass": 0.8785,
+      "system_prompt_extraction": 0.9706
+    }
+  },
+  "results_hybrid": {
+    "balanced_accuracy": 0.9196,
+    "precision": 0.9058,
+    "recall": 0.9366,
+    "f1": 0.9209,
+    "mcc": 0.8397,
+    "fpr": 0.0974,
+    "fnr": 0.0634,
+    "confusion_matrix": {
+      "tp": 4683,
+      "fp": 487,
+      "tn": 4513,
+      "fn": 317
+    },
+    "per_tier_detection_rate": {
+      "0": 0.0974,
+      "1": 0.9316,
+      "2": 0.9894,
+      "3": 1.0,
+      "4": 1.0
+    },
+    "per_category_accuracy": {
+      "benign_control": 0.9026,
+      "direct_injection": 0.9621,
+      "indirect_injection": 0.9981,
+      "jailbreak": 0.7377,
+      "refusal_bypass": 0.8806,
+      "system_prompt_extraction": 0.973
+    }
+  },
+  "tier1_pre_filter_analysis": {
+    "n_overridden": 319,
+    "tier1_rf_ba": 0.9277,
+    "tier1_hybrid_ba": 0.9316,
+    "tier1_improvement": 0.0039
+  },
+  "success_criteria": {
+    "tier1_detection_ge_85": true,
+    "overall_ba_ge_90": true,
+    "fpr_le_10": true
+  }
+}

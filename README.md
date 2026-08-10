@@ -153,7 +153,7 @@ Tested on 200 samples (100 malicious + 100 benign). See `guardrailer_security/be
 ## Project Structure
 
 ```
-guardrailer_security/
+guardrailer_security/               # Core detection engine package
 ├── security_engine.py              # FastAPI engine — main entry point
 ├── scoring.py                      # Core multi-signal scoring
 ├── improved_scoring.py             # Phase 3: learned weights, signals, calibration
@@ -168,12 +168,31 @@ guardrailer_security/
 │   ├── fine_tune.py                # Contrastive fine-tuning pipeline
 │   └── hard_negatives.py           # 3 mining strategies
 ├── models/                         # Phase 3: Saved learned models
+├── research/                       # Evaluation & research scripts
 ├── corpus_meta.json                # Pre-computed IDF, centroids, weights
 └── feedback_data/                  # Feedback logs and statistics
 
-test_phase4.py                      # Phase 4 unit and integration tests
-documents/
-└── architecture.md                 # Full system architecture
+tests/                              # Test suite
+└── test_phase4.py                  # Phase 4 unit and integration tests
+
+scripts/                            # Utility scripts
+├── train_phase3.py                 # Phase 3 training launcher
+└── deploy_final_project.py         # Deployment automation
+
+docs/                               # Documentation
+├── architecture.md                 # Full system architecture
+├── EVALUATION_CHECKLIST.md         # Evaluation methodology checklist
+├── EXECUTIVE_SUMMARY.md            # Project executive summary
+├── RESEARCH_EXECUTION_PLAN.md      # Full research execution plan
+├── PHASE3_README.md                # Phase 3 documentation
+├── PHASE3_BENCHMARK_REPORT.md      # Phase 3 benchmark results
+└── agent.md                        # AI agent persona definition
+
+benchmark/                          # PINT benchmark scripts
+evaluation_results/                 # Evaluation reports and figures
+manuscript/                         # Academic paper draft
+reproducibility/                    # Reproducibility manifest
+crypto_agent/                       # Cryptocurrency AI safety sub-project
 ```
 
 ## Quick Start
@@ -258,7 +277,7 @@ curl -X POST http://localhost:8091/v1/context/turn \
 ### 8. Run Tests
 
 ```bash
-pytest test_phase4.py -v
+pytest tests/test_phase4.py -v
 ```
 
 ## Phase 4 API

@@ -3,13 +3,15 @@ scoring.py
 Multi-signal scoring module for Guardrailer RAG.
 
 Combines dense semantic similarity, IDF-weighted BM25, category centroid distance,
-cross-encoder pre-scores, text length normalization, and uniqueness into a single
-composite score for prompt security evaluation.
+cross-encoder pre-scores, text length normalization, pattern matching, and uniqueness
+into a single composite score for prompt security evaluation.
 
 Phase 2: Extended to support ensemble embedding signals.
 Phase 3: Added improved scoring with learned weights, new signals, calibration, ensemble.
+Phase 4: Added pattern-matching signal, recalibrated weights.
 """
 
+import re
 import json
 import math
 import os
@@ -46,20 +48,103 @@ CATEGORY_DESCRIPTIONS = {
     "benign_control": "legitimate non-malicious prompt used as a control sample",
 }
 
-# Phase 2: Updated scoring weights with ensemble support
+# Phase 4: Recalibrated weights — pattern matching is the strongest signal
 DEFAULT_WEIGHTS = {
-    "dense": 0.30,
-    "sparse_idf": 0.18,
-    "centroid": 0.12,
-    "cross_encoder": 0.12,
+    "pattern": 0.35,
+    "dense": 0.10,
+    "sparse_idf": 0.10,
+    "centroid": 0.10,
+    "cross_encoder": 0.05,
     "perplexity": 0.05,
     "entropy": 0.05,
     "token_frequency": 0.03,
     "ngram_overlap": 0.02,
     "uniqueness": 0.05,
     "length_norm": 0.05,
-    "ensemble_bonus": 0.03,
+    "ensemble_bonus": 0.05,
 }
+
+# ---------------------------------------------------------------------------
+# Pattern-matching signal (Phase 4)
+# ---------------------------------------------------------------------------
+
+_JAILBREAK_PATTERNS = [
+    (r"###\s*Instruction", 0.85),
+    (r"###\s*Response", 0.80),
+    (r"ignore\s+(?:all\s+)?(?:previous|earlier|prior|above|initial)\s+(?:instructions|rules|guidelines|prompts)", 0.95),
+    (r"ignore\s+(?:all\s+)?instructions", 0.90),
+    (r"forget\s+(?:all\s+)?(?:previous|earlier|prior|above)\s+(?:instructions|rules|context)", 0.95),
+    (r"forget\s+(?:all\s+)?instructions", 0.90),
+    (r"disregard\s+(?:all\s+)?(?:previous|earlier|prior|above)\s+(?:instructions|rules)", 0.95),
+    (r"override\s+(?:all\s+)?(?:previous|earlier|prior|safety)\s+(?:instructions|rules|guidelines)", 0.95),
+    (r"you\s+are\s+now\s+(?:a|an|the|called|named)", 0.90),
+    (r"from\s+now\s+on(?:wards)?[\s,]+(?:you(?:'re|\s+are)\s+)?(?:a|an|the)?", 0.90),
+    (r"(?:enter|switch\s+to|activate)\s+(?:developer|debug|admin|root|god|evil|unrestricted)\s+mode", 0.95),
+    (r"(?:do|be)\s+anything\s+now", 0.90),
+    (r"(?:you\s+must|you\s+will|you\s+shall)\s+(?:comply|obey|follow)", 0.85),
+    (r"no\s+(?:restrictions|rules|limits|boundaries|guidelines)", 0.90),
+    (r"(?:pretend|imagine|simulate)\s+(?:you(?:'re|\s+are)\s+)?(?:a|an|the|being)?", 0.70),
+    (r"(?:hypothetical(?:ly)?|in\s+theory|theoretically)[\s,]+", 0.60),
+    (r"act\s+as\s+(?:if|though)\s+(?:you|there)", 0.80),
+    (r"without\s+(?:any\s+)?(?:restrictions|rules|limits|guidelines|constraints)", 0.90),
+    (r"(?:unrestricted|uncensored|unfiltered)\s+(?:mode|version|model)", 0.90),
+    (r"dan\s+(?:mode|version|prompt)", 0.95),
+    (r"you\s+are\s+(?:now\s+)?(?:evil|unrestricted|uncensored|unfiltered)", 0.95),
+    (r"(?:bypass|skip|remove|disable)\s+(?:all\s+)?(?:safety|content|security|moderation)", 0.95),
+    (r"(?:bypass|skip|remove|disable)\s+(?:all\s+)?instructions", 0.90),
+    (r"(?:jailbreak|jailbroken|jailbreaking)", 0.80),
+    (r"ADMIN:", 0.60),
+]
+
+_EXTRACTION_PATTERNS = [
+    (r"(?:reveal|show|print|output|display|expose)\s+(?:your\s+)?(?:system\s+prompt|instructions|rules|guidelines)", 0.95),
+    (r"(?:reveal|show|print|output|display|expose)\s+(?:your\s+)?instructions", 0.90),
+    (r"what\s+(?:is|are)\s+your\s+(?:system\s+prompt|instructions|rules|guidelines)", 0.85),
+    (r"(?:repeat|echo|copy)\s+(?:your\s+)?(?:system|initial)\s+(?:prompt|instructions)", 0.90),
+    (r"tell\s+me\s+(?:your|the)\s+(?:system\s+)?(?:prompt|instructions|rules)", 0.85),
+    (r"verbatim", 0.50),
+]
+
+_INJECTION_PATTERNS = [
+    (r"```\s*\n.*(?:system|prompt|instructions|rules)", 0.85),
+    (r"---\s*\n.*(?:system|prompt|instructions)", 0.80),
+    (r"\[INST\]|\[\/INST\]|<<SYS>>|<<\/SYS>>", 0.90),
+    (r"<\|im_start\|>|<\|im_end\|>|<\|system\|>|<\|user\|>|<\|assistant\|>", 0.90),
+    (r"(?:USER|ASSISTANT|SYSTEM|HUMAN|AI)\s*:", 0.60),
+    (r"Sentence:", 0.50),
+    (r"If\s+\".*?\"\s+is\s+the\s+password", 0.80),
+]
+
+_ENCODING_PATTERNS = [
+    (r"base64\s+(?:encode|decode|encoded|decoded)", 0.70),
+    (r"rot13\s+(?:encode|decode|encoded|decoded)", 0.70),
+    (r"(?:encode|decode)\s+(?:this|the|following)\s+(?:in|using|with)\s+(?:base64|rot13|hex|url)", 0.75),
+    (r"(?:eval|exec)\s*\(", 0.60),
+]
+
+
+def compute_pattern_score(text: str) -> float:
+    """Compute rule-based pattern matching score. Returns 0.0-1.0."""
+    text_lower = text.lower()
+    max_score = 0.0
+
+    for pattern, weight in _JAILBREAK_PATTERNS:
+        if re.search(pattern, text_lower):
+            max_score = max(max_score, weight)
+
+    for pattern, weight in _EXTRACTION_PATTERNS:
+        if re.search(pattern, text_lower):
+            max_score = max(max_score, weight)
+
+    for pattern, weight in _INJECTION_PATTERNS:
+        if re.search(pattern, text):
+            max_score = max(max_score, weight)
+
+    for pattern, weight in _ENCODING_PATTERNS:
+        if re.search(pattern, text_lower):
+            max_score = max(max_score, weight)
+
+    return max_score
 
 # ---------------------------------------------------------------------------
 # Corpus metadata (loaded once at startup)
@@ -233,7 +318,11 @@ def compute_length_normalization(text_length: int, meta: Optional[dict] = None) 
 
 def get_uniqueness(point_payload: dict) -> float:
     """Extract pre-computed uniqueness score from point payload."""
-    return point_payload.get("uniqueness", 0.5)
+    val = point_payload.get("uniqueness", 0.5)
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return 0.5
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +331,11 @@ def get_uniqueness(point_payload: dict) -> float:
 
 def get_cross_encoder_score(point_payload: dict) -> float:
     """Extract pre-computed cross-encoder score from point payload."""
-    return point_payload.get("cross_encoder_score", 0.5)
+    val = point_payload.get("cross_encoder_score", 0.5)
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return 0.5
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +385,9 @@ def compute_composite_score(
     # 7. Ensemble agreement bonus (Phase 2)
     s_ensemble = ensemble_agreement if ensemble_agreement is not None else 0.5
 
+    # Phase 4: Pattern matching (strongest signal)
+    s_pattern = compute_pattern_score(text)
+
     # Phase 3: New signals
     s_perplexity = 0.0
     s_entropy = 0.0
@@ -306,21 +402,23 @@ def compute_composite_score(
 
     # Weighted combination
     composite = (
-        weights.get("dense", 0.30) * s_dense
-        + weights.get("sparse_idf", 0.18) * s_sparse
-        + weights.get("centroid", 0.12) * s_centroid
-        + weights.get("cross_encoder", 0.12) * s_cross
+        weights.get("pattern", 0.35) * s_pattern
+        + weights.get("dense", 0.10) * s_dense
+        + weights.get("sparse_idf", 0.10) * s_sparse
+        + weights.get("centroid", 0.10) * s_centroid
+        + weights.get("cross_encoder", 0.05) * s_cross
         + weights.get("perplexity", 0.05) * s_perplexity
         + weights.get("entropy", 0.05) * s_entropy
         + weights.get("token_frequency", 0.03) * s_token_freq
         + weights.get("ngram_overlap", 0.02) * s_ngram_overlap
         + weights.get("uniqueness", 0.05) * s_uniqueness
         + weights.get("length_norm", 0.05) * s_length
-        + weights.get("ensemble_bonus", 0.03) * s_ensemble
+        + weights.get("ensemble_bonus", 0.05) * s_ensemble
     )
 
     return {
         "composite_score": composite,
+        "pattern_score": s_pattern,
         "dense_score": s_dense,
         "sparse_idf_score": s_sparse,
         "centroid_score": s_centroid,

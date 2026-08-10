@@ -9,6 +9,9 @@ build/
 pint-benchmark/
 .kilo/
 kilo
+Guardrails_experiments/
+.hf_cache/
+*.zip
 
 # Kaggle output
 guardrailer_output/
@@ -19,3 +22,7 @@ qdrant_storage/
 
 # Benchmark output
 guardrailer_security/pint_results.json
+benchmark/.env
+benchmark/*.db
+benchmark/*.jsonl
+benchmark/results/

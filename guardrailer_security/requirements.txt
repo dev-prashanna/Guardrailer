@@ -24,3 +24,5 @@ transformers>=4.30.0
 # Phase 3: Improved Scoring
 # scikit-learn already included above for logistic regression, MLP, calibration
 # torch already included above for attention-based weight learning
+# Research Evaluation Framework
+statsmodels>=0.14.0

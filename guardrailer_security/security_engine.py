@@ -790,6 +790,14 @@ try:
 except ImportError:
     pass
 
+# Auto-retrain: Import and availability
+AUTO_RETRAIN_AVAILABLE = False
+try:
+    from auto_retrain import get_auto_retrain_worker
+    AUTO_RETRAIN_AVAILABLE = True
+except ImportError:
+    pass
+
 
 @app.on_event("startup")
 def startup():
@@ -807,7 +815,16 @@ def startup():
         except Exception as e:
             log.warning("Failed to integrate Phase 4 routes: %s", e)
     
-    log.info("Security engine v4.0 ready (multi-signal scoring + ensemble embeddings + Phase 3 improved scoring + Phase 4 streaming/context/hash).")
+    # Auto-retrain: Start background worker
+    if AUTO_RETRAIN_AVAILABLE:
+        try:
+            worker = get_auto_retrain_worker()
+            worker.start()
+            log.info("Auto-retrain worker started")
+        except Exception as e:
+            log.warning("Failed to start auto-retrain worker: %s", e)
+    
+    log.info("Security engine v4.1 ready (multi-signal scoring + ensemble embeddings + Phase 3 improved scoring + Phase 4 streaming/context/hash + auto-retrain).")
 
 
 @app.get("/", include_in_schema=False)
@@ -820,9 +837,10 @@ def root():
 def health():
     return {
         "status": "ok",
-        "version": "4.0.0",
+        "version": "4.1.0",
         "phase3_available": PHASE3_AVAILABLE,
         "phase4_available": PHASE4_AVAILABLE,
+        "auto_retrain_available": AUTO_RETRAIN_AVAILABLE,
     }
 
 
@@ -1161,6 +1179,7 @@ def get_stats():
             "health": "/health",
             "train": "/v1/train",
             "set_weight_mode": "/v1/set-weight-mode",
+            "auto_retrain": "/v1/auto-retrain/status",
         },
     }
 
@@ -1173,6 +1192,46 @@ def get_recent_feedback(limit: int = 50):
 @app.get("/v1/feedback/pending")
 def get_pending_samples(limit: int = 1000):
     return {"samples": feedback_logger.get_pending_samples(limit), "count": len(feedback_logger.get_pending_samples(limit))}
+
+
+# ---------------------------------------------------------------------------
+# Auto-Retrain endpoints
+# ---------------------------------------------------------------------------
+
+@app.get("/v1/auto-retrain/status")
+def get_auto_retrain_status():
+    """Get status of the auto-retrain system."""
+    if not AUTO_RETRAIN_AVAILABLE:
+        return {"status": "unavailable", "reason": "auto_retrain module not installed"}
+    worker = get_auto_retrain_worker()
+    return worker.get_status()
+
+
+@app.post("/v1/auto-retrain/train-now")
+def force_auto_retrain():
+    """Force immediate training on current buffer contents."""
+    if not AUTO_RETRAIN_AVAILABLE:
+        raise HTTPException(status_code=503, detail="auto_retrain module not installed")
+    worker = get_auto_retrain_worker()
+    if len(worker.buffer.samples) < 5:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Need at least 5 samples, buffer has {len(worker.buffer.samples)}"
+        )
+    result = worker.trainer.train_incremental(worker.buffer)
+    if result.get("status") == "completed":
+        worker.buffer.clear()
+    return result
+
+
+@app.delete("/v1/auto-retrain/buffer")
+def clear_auto_retrain_buffer():
+    """Clear the attack buffer without training."""
+    if not AUTO_RETRAIN_AVAILABLE:
+        raise HTTPException(status_code=503, detail="auto_retrain module not installed")
+    worker = get_auto_retrain_worker()
+    worker.buffer.clear()
+    return {"status": "ok", "message": "Buffer cleared"}
 
 
 # ---------------------------------------------------------------------------

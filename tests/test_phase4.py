@@ -15,7 +15,7 @@ import pytest
 
 # Add guardrailer_security to path
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parent / "guardrailer_security"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "guardrailer_security"))
 
 from phase4_prototype import (
     MinHash,

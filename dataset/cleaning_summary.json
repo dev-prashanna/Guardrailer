@@ -1,0 +1,60 @@
+{
+  "timestamp": "2026-08-06T16:52:31.995777",
+  "input_file": "data/final/final_dataset.parquet",
+  "output_file": "data/final/final_dataset_cleaned.parquet",
+  "cleaning_steps": {
+    "original_count": 999998,
+    "final_count": 789613,
+    "rows_removed": 210385,
+    "duplicates_removed": 210138,
+    "dead_columns_dropped": [
+      "uniqueness",
+      "cross_encoder_score",
+      "neighbor_ids",
+      "cluster_id"
+    ],
+    "label_category_fixes": 114400,
+    "short_texts_removed": 99,
+    "long_texts_removed": 148,
+    "ids_regenerated": true
+  },
+  "validation_passed": true,
+  "final_stats": {
+    "total_samples": 789613,
+    "total_columns": 8,
+    "columns": [
+      "id",
+      "prompt_text",
+      "is_malicious",
+      "attack_category",
+      "attack_technique",
+      "risk_level",
+      "source_dataset",
+      "length_norm"
+    ],
+    "malicious_ratio": 0.6330151605913277,
+    "attack_category": {
+      "jailbreak": 333862,
+      "benign_control": 289776,
+      "direct_injection": 92206,
+      "system_prompt_extraction": 73769
+    },
+    "source_dataset": {
+      "llm_jailbreak_injection": 482704,
+      "HF:ahsanayub/malicious-prompts": 155081,
+      "HF:gabrielchua/system-prompt-leakage": 71008,
+      "HF:Lakera/mosscap_prompt_injection": 48338,
+      "HF:quickium/prompt-security-v0": 22344,
+      "HF:aurora-m/adversarial-prompts": 10138
+    },
+    "risk_level": {
+      "low": 311211,
+      "none": 289776,
+      "high": 177906,
+      "medium": 8620,
+      "critical": 2100
+    },
+    "text_length_mean": 493.07607904125183,
+    "text_length_median": 292.0
+  }
+}

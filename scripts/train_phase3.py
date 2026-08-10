@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 orig_cwd = Path.cwd()
-security_dir = Path(__file__).resolve().parent / "guardrailer_security"
+security_dir = Path(__file__).resolve().parent.parent / "guardrailer_security"
 
 sys.path.insert(0, str(security_dir))
 
