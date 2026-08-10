@@ -12,10 +12,11 @@ kilo
 Guardrails_experiments/
 .hf_cache/
 *.zip
+*.parquet
+*.npy
 
 # Kaggle output
 guardrailer_output/
-*.npy
 
 # Qdrant data
 qdrant_storage/
