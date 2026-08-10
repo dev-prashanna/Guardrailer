@@ -1,9 +1,0 @@
-.env
-.venv/
-__pycache__/
-*.pyc
-unified_security_dataset.parquet
-benchmark_report.json
-sparse_index_meta.json
-ingestion_checkpoint.json
-feedback_data/
