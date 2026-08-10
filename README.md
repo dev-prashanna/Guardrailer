@@ -125,6 +125,8 @@ Phase 4 extends Guardrailer for real-time conversational agents:
 - Platt Scaling (sigmoid-based)
 - Isotonic Regression (non-parametric)
 
+## The Crypto Agent is for a pipeline to make sure the LLM dosen't get tricked by cryptographic hashes or similar attack *under development*
+
 ## Benchmark Results
 
 ### Before vs After Improvements
