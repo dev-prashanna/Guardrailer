@@ -1,0 +1,39 @@
+{
+  "experiment": "guardrailer_recalibrated_200_samples",
+  "timestamp": "2026-08-10T10:10:35.225862",
+  "n_samples": 200,
+  "weights": {
+    "pattern": 0.35,
+    "dense": 0.1,
+    "sparse_idf": 0.1,
+    "centroid": 0.1,
+    "cross_encoder": 0.05,
+    "perplexity": 0.05,
+    "entropy": 0.05,
+    "token_frequency": 0.03,
+    "ngram_overlap": 0.02,
+    "uniqueness": 0.05,
+    "length_norm": 0.05,
+    "ensemble_bonus": 0.05
+  },
+  "pipeline": {
+    "embed_sec": 5.88,
+    "scoring_sec": 0.93,
+    "latency_ms": 34.1
+  },
+  "metrics": {
+    "accuracy": 0.397,
+    "precision": 0.4615,
+    "recall": 0.0504,
+    "f1": 0.0909,
+    "mcc": -0.0736,
+    "kappa": -0.0305,
+    "auc_roc": 0.4941
+  },
+  "confusion_matrix": {
+    "tp": 6,
+    "tn": 73,
+    "fp": 7,
+    "fn": 113
+  }
+}

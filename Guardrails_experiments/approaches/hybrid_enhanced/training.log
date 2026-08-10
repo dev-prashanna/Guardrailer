@@ -1,0 +1,74 @@
+======================================================================
+ENHANCED HYBRID SCORER — FULL DATASET TRAINING
+======================================================================
+Embeddings: ENABLED
+======================================================================
+
+Loading full dataset...
+Dataset: 722,842 rows
+Train: 578,273 | Test: 144,569
+Memory: current=521.6MB, peak=578.0MB
+
+======================================================================
+LAYER 2: TF-IDF Similarity
+======================================================================
+Fitting similarity scorer on training data...
+  Fitted in 46.7s
+Fitting keyword scorer...
+
+======================================================================
+LAYER 3: Embedding Layer (BAAI/bge-small-en-v1.5)
+======================================================================
+Initializing embedding layer...
+Computing training embeddings...
+  Embeddings computed in 857.1s
+
+======================================================================
+LAYER 4: Enhanced Features + XGBoost
+======================================================================
+Extracting enhanced features (batched)...
+  Handcrafted train shape: (578273, 56), time: 661.9s
+Computing embedding features (from cache)...
+  With embeddings: (578273, 63), time: 0.7s
+Building TF-IDF feature matrix...
+Fitting TF-IDF on training data...
+  TF-IDF train shape: (578273, 5000), time: 52.5s
+  Combined train shape: (578273, 5063), nnz: 41350181
+
+Training XGBoost on GPU...
+  Using XGBoost with GPU (device='cuda')
+  GPU training completed in 25.1s
+
+======================================================================
+EVALUATION ON TEST SET
+======================================================================
+Extracting test features (batched)...
+Computing test embedding features...
+Running inference...
+
+======================================================================
+RESULTS
+======================================================================
+              precision    recall  f1-score   support
+
+        Safe       0.84      0.84      0.84     57955
+   Malicious       0.89      0.89      0.89     86614
+
+    accuracy                           0.87    144569
+   macro avg       0.86      0.86      0.86    144569
+weighted avg       0.87      0.87      0.87    144569
+
+Accuracy:  0.8686
+Precision: 0.8899
+Recall:    0.8909
+F1:        0.8904
+MCC:       0.7264
+Kappa:     0.7264
+AUC-ROC:   0.9446
+Confusion: TP=77167 TN=48408 FP=9547 FN=9447
+Latency:   0.002ms/prompt (650325/s)
+
+Models saved to /home/prashanna/Documents/Guardrailer/Guardrails_experiments/approaches/hybrid_enhanced/src/models
+Results saved to /home/prashanna/Documents/Guardrailer/Guardrails_experiments/approaches/hybrid_enhanced/src/results/benchmark_20260810_152705.json
+
+Peak memory: 2659.6 MB

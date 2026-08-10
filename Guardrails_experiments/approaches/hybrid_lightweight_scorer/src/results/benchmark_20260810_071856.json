@@ -1,0 +1,41 @@
+{
+  "experiment": "hybrid_lightweight_scorer",
+  "timestamp": "2026-08-10T07:18:56.838009",
+  "dataset": "/home/prashanna/Documents/Guardrailer/dataset/guardrailer_dataset_v1.parquet",
+  "n_samples_total": 29999,
+  "n_train": 23999,
+  "n_test": 6000,
+  "train_time_seconds": 184.83,
+  "inference": {
+    "total_seconds": 19.34,
+    "latency_ms": 3.223,
+    "throughput_per_sec": 310.3
+  },
+  "metrics": {
+    "accuracy": 0.818,
+    "precision": 0.8803,
+    "recall": 0.8058,
+    "f1": 0.8414,
+    "mcc": 0.6322,
+    "kappa": 0.6289,
+    "auc_roc": 0.8875
+  },
+  "confusion_matrix": {
+    "tp": 2897,
+    "tn": 2011,
+    "fp": 394,
+    "fn": 698
+  },
+  "model_sizes_mb": {
+    "keywords": 0.549809,
+    "classifier": 0.083865,
+    "feature_names": 0.000903,
+    "config": 0.000195,
+    "similarity": 2.124112,
+    "tfidf": 0.022966,
+    "total": 2.78185
+  },
+  "memory": {
+    "peak_mb": 448.9
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "experiment": "guardrailer_full_pipeline_200_samples",
+  "timestamp": "2026-08-10T09:57:43.010423",
+  "n_samples": 200,
+  "pipeline": {
+    "embed_sec": 5.88,
+    "scoring_sec": 9.61,
+    "total_sec": 15.49,
+    "latency_ms": 77.5
+  },
+  "metrics": {
+    "accuracy": 0.5578,
+    "precision": 0.5886,
+    "recall": 0.8655,
+    "f1": 0.7007,
+    "mcc": -0.0519,
+    "kappa": -0.0389,
+    "auc_roc": 0.4809
+  },
+  "confusion_matrix": {
+    "tp": 103,
+    "tn": 8,
+    "fp": 72,
+    "fn": 16
+  }
+}

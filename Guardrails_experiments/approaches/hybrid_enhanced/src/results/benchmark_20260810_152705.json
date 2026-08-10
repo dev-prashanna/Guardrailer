@@ -1,0 +1,39 @@
+{
+  "experiment": "enhanced_hybrid_scorer",
+  "timestamp": "2026-08-10T15:27:05.767625",
+  "dataset": "/home/prashanna/Documents/Guardrailer/dataset/guardrailer_dataset_v1.parquet",
+  "n_train": 578273,
+  "n_test": 144569,
+  "use_embeddings": true,
+  "classifier": "XGBoost (device=cuda)",
+  "inference": {
+    "total_seconds": 0.22,
+    "latency_ms": 0.002,
+    "throughput_per_sec": 650325.1
+  },
+  "metrics": {
+    "accuracy": 0.8686,
+    "precision": 0.8899,
+    "recall": 0.8909,
+    "f1": 0.8904,
+    "mcc": 0.7264,
+    "kappa": 0.7264,
+    "auc_roc": 0.9446
+  },
+  "confusion_matrix": {
+    "tp": 77167,
+    "tn": 48408,
+    "fp": 9547,
+    "fn": 9447
+  },
+  "model_sizes_mb": {
+    "keywords": 4.49,
+    "classifier": 0.42,
+    "feature_names": 0.0,
+    "config": 0.0,
+    "similarity": 2.08,
+    "tfidf": 0.06,
+    "embedding_model": 130.0,
+    "total": 137.05
+  }
+}

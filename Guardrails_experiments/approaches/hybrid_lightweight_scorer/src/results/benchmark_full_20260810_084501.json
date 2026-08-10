@@ -1,0 +1,36 @@
+{
+  "experiment": "hybrid_lightweight_scorer_full_dataset",
+  "timestamp": "2026-08-10T08:45:01.253427",
+  "dataset": "/home/prashanna/Documents/Guardrailer/dataset/guardrailer_dataset_v1.parquet",
+  "n_total": 722842,
+  "n_train": 578273,
+  "n_test": 144569,
+  "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "classifier": "XGBoost (device=cuda)",
+  "inference": {
+    "total_seconds": 0.18,
+    "latency_ms": 0.001,
+    "throughput_per_sec": 808183.5
+  },
+  "metrics": {
+    "accuracy": 0.8647,
+    "precision": 0.8775,
+    "recall": 0.8999,
+    "f1": 0.8885,
+    "mcc": 0.717,
+    "kappa": 0.7166,
+    "auc_roc": 0.9419
+  },
+  "confusion_matrix": {
+    "tp": 77943,
+    "tn": 47070,
+    "fp": 10885,
+    "fn": 8671
+  },
+  "model_sizes_mb": {
+    "classifier": 0.42,
+    "tfidf": 0.06,
+    "similarity": 2.08,
+    "keywords": 4.49
+  }
+}

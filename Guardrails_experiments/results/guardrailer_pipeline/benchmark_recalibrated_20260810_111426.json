@@ -1,0 +1,22 @@
+{
+  "experiment": "guardrailer_recalibrated_correct_data_200_samples",
+  "timestamp": "2026-08-10T11:14:26.907657",
+  "dataset": "/home/prashanna/Documents/Guardrailer/dataset/guardrailer_dataset_v1.parquet",
+  "n_samples": 200,
+  "qdrant_points": 722842,
+  "metrics": {
+    "accuracy": 0.4121,
+    "precision": 0.55,
+    "recall": 0.0924,
+    "f1": 0.1583,
+    "mcc": -0.0327,
+    "kappa": -0.0167,
+    "auc_roc": 0.4604
+  },
+  "confusion_matrix": {
+    "tp": 11,
+    "tn": 71,
+    "fp": 9,
+    "fn": 108
+  }
+}

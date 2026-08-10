@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.cache/
+*.joblib
+*.lock
+src/models/
+src/results/
+data/
+tests/
