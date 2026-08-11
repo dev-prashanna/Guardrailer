@@ -1,10 +1,6 @@
 # Guardrailer: A Rigorous Evaluation Framework for Multi-Signal LLM Guardrail Systems
 
-**Authors:** [Author Names]
-
-**Affiliations:** [Institutional Affiliations]
-
-**Corresponding Author:** [Email]
+**Authors:** [Prashanna Tiwari]
 
 **Date:** August 2026
 
