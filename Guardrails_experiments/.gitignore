@@ -1,9 +1,58 @@
+# Python
 __pycache__/
-*.pyc
-.cache/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model artifacts
 *.joblib
-*.lock
-src/models/
-src/results/
-data/
-tests/
+*.pkl
+*.pt
+*.pth
+*.onnx
+*.bin
+
+# Data files
+*.parquet
+*.csv
+*.tsv
+*.h5
+*.hdf5
+
+# Logs
+*.log
+logs/
+
+# Cache
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Training artifacts (inside approach directories)
+**/src/models/
+**/src/results/
+**/models/*.joblib
+**/models/*.pkl

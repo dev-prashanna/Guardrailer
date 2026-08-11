@@ -1,2 +1,33 @@
-# Shared experiment configs
-# Add reusable experiment parameters here
+# Guardrailer — Shared Experiment Configs
+# Common parameters across all approaches
+
+dataset:
+  path: "guardrailer_dataset_v1.parquet"
+  total_samples: 722842
+  train_ratio: 0.8
+  random_seed: 42
+
+xgboost:
+  n_estimators: 300
+  max_depth: 6
+  learning_rate: 0.1
+  subsample: 0.8
+  colsample_bytree: 0.8
+  eval_metric: "logloss"
+  tree_method: "hist"
+
+tfidf:
+  max_features: 5000
+  sublinear_tf: true
+  norm: "l2"
+
+similarity:
+  max_features: 50000
+
+scoring:
+  threat_levels:
+    critical: 0.8
+    high: 0.6
+    medium: 0.4
+    low: 0.2
+    safe: 0.0

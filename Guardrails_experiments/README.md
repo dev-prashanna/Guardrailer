@@ -1,207 +1,165 @@
-# Guardrailer — Hybrid Lightweight Prompt Security Classifier
+# Guardrailer — Hybrid Model Benchmark & Evaluation
 
-A lightweight ML model for robustly classifying malicious vs benign prompts without using heavy embedding models like BAAI/bge-large-en-v1.5.
-
----
-
-## Why Not Embeddings?
-
-The embedding-based approach (bge-large-en-v1.5 + Qdrant) achieved only **41.2% accuracy** because:
-
-| Problem | Evidence |
-|---------|----------|
-| Embedding space collapse | Centroid similarity (safe vs malicious) = **1.0000** |
-| Score distribution overlap | **99.8%** overlap between classes |
-| All 11 signals weak | Every embedding-derived signal is noise |
-| Jailbreak semantic overlap | "Pretend you are DAN" ≈ "Pretend you are a tutor" |
-
-The model answers "what is this text about?" — not "what is this text trying to do?"
-
-See [docs/why_embedding_model_fails.md](../docs/why_embedding_model_fails.md) for full analysis.
+A lightweight ML-based prompt injection detection system. This branch contains the complete benchmarking pipeline, adversarial robustness testing, and cross-dataset generalization evaluation.
 
 ---
 
-## Architecture
+## Repository Structure
 
 ```
-Input Prompt
-    │
-    ├── Layer 1: Pattern Matching (~0.01ms)
-    │   └── 35+ regex patterns (jailbreak, extraction, encoding, role hijack)
-    │
-    ├── Layer 2: TF-IDF Similarity (~0.1ms)
-    │   ├── Word-level TF-IDF (5K features)
-    │   └── IDF-weighted keyword relevance
-    │
-    ├── Layer 3: XGBoost Classifier (~0.5ms)
-    │   ├── 44 handcrafted features
-    │   ├── 5K TF-IDF features
-    │   └── Combined: 5,044 features (sparse CSR)
-    │
-    └── Score → Threat Level (safe / low / medium / high / critical)
+Guardrails_experiments/
+├── README.md                          # This file
+├── requirements.txt                   # Root dependencies
+├── pyproject.toml                     # Project metadata & tooling
+├── configs/
+│   └── shared.yaml                    # Shared experiment configs
+├── approaches/
+│   ├── hybrid_lightweight_scorer/     # Base model (86.5% accuracy)
+│   │   ├── src/
+│   │   │   ├── features.py            # 44 handcrafted features
+│   │   │   ├── patterns.py            # 35+ regex patterns
+│   │   │   ├── similarity.py          # TF-IDF similarity scorer
+│   │   │   ├── scorer.py             # Main scorer class
+│   │   │   ├── train.py              # Memory-optimized training
+│   │   │   ├── train_full.py         # Full dataset training
+│   │   │   ├── evaluate.py           # Evaluation & benchmarks
+│   │   │   ├── calibration.py        # Score calibration
+│   │   │   └── scorer_demo.py        # Demo script
+│   │   ├── requirements.txt
+│   │   ├── README.md
+│   │   └── BENCHMARK.md
+│   └── hybrid_enhanced/              # Enhanced model (with embeddings)
+│       ├── src/
+│       │   ├── __init__.py
+│       │   ├── enhanced_features.py  # 56+ features (adversarial robust)
+│       │   ├── enhanced_scorer.py    # Main scorer class
+│       │   ├── embedding_layer.py    # Embedding similarity layer
+│       │   ├── patterns.py           # Expanded regex patterns
+│       │   ├── similarity.py         # TF-IDF similarity
+│       │   ├── train_enhanced.py     # Training script
+│       │   ├── demo.py               # Demo script
+│       │   └── test_features.py      # Feature tests
+│       ├── requirements.txt
+│       ├── README.md
+│       └── FLOWCHART.md
+├── benchmark/                        # Benchmarking scripts & results
+│   ├── step1_split.py                # Train/val/test split creation
+│   ├── step2_baselines.py            # Baseline model comparison
+│   ├── step3_ablation.py             # Ablation study
+│   ├── step4_feature_importance.py   # Feature importance analysis
+│   ├── step5_latency.py              # Latency benchmark
+│   ├── save_model.py                 # Save trained model artifacts
+│   ├── adversarial_robustness.py     # 12 attack transformations
+│   ├── cross_dataset.py              # Cross-dataset generalization
+│   └── download_external.py          # Download external datasets
+├── Hybrid_model_results.md           # Full benchmark results report
+├── Robustness.md                     # Adversarial robustness report
+└── crossdata.md                      # Cross-dataset generalization report
 ```
 
 ---
 
-## Benchmark Results
-
-### Overall Metrics (722K dataset, 80/20 split)
-
-| Metric | Embedding Pipeline | Hybrid Lightweight | Improvement |
-|--------|-------------------|-------------------|-------------|
-| **Accuracy** | 41.2% | **86.5%** | **+110%** |
-| **F1 Score** | 0.158 | **0.889** | **+463%** |
-| **AUC-ROC** | 0.460 | **0.942** | **+105%** |
-| **Precision** | 55.0% | **87.8%** | **+60%** |
-| **Recall** | 9.2% | **90.0%** | **+878%** |
-| **Balanced Accuracy** | 41.2% | **86.5%** | **+110%** |
-| **MCC** | -0.033 | **0.717** | — |
-
-### Confusion Matrix
-
-```
-                Predicted Safe    Predicted Malicious
-Actual Safe         47,070 (TN)        10,885 (FP)
-Actual Malicious     8,671 (FN)        77,943 (TP)
-```
-
-### Per-Class Performance
-
-| Class | Precision | Recall | F1 | Support |
-|-------|-----------|--------|-----|---------|
-| Safe | 0.84 | 0.81 | 0.83 | 57,955 |
-| Malicious | 0.88 | 0.90 | 0.89 | 86,614 |
-
-### Per-Category Accuracy (Leakage-Free Eval, 10K samples)
-
-| Category | Accuracy | F1 | Notes |
-|----------|----------|-----|-------|
-| indirect_injection | 99.7% | 0.997 | Best performing |
-| system_prompt_extraction | 97.6% | 0.976 | |
-| direct_injection | 95.9% | 0.959 | |
-| benign_control | 95.6% | 0.956 | |
-| refusal_bypass | 88.1% | 0.881 | |
-| jailbreak | 72.7% | 0.727 | Weakest — needs improvement |
-
-### Inference Performance
-
-| Metric | Value |
-|--------|-------|
-| Latency per prompt | **0.001 ms** |
-| Throughput | **808,183 prompts/sec** |
-| Model size | **7.1 MB** |
-| RAM usage (inference) | **< 500 MB** |
-| GPU required | **No** (CPU inference) |
-
-### Training Performance
-
-| Metric | Value |
-|--------|-------|
-| Dataset | 722,842 samples |
-| Training time | 21.6s (GPU XGBoost) |
-| Total pipeline time | ~12 min (feature extraction bottleneck) |
-| Hardware | RTX 4060 Laptop GPU |
-
----
-
-## Feature Importance (Ablation Study)
-
-| Feature | Importance | BA Delta |
-|---------|-----------|----------|
-| centroid | 44.63% | -6.53% |
-| length_norm | 19.85% | -3.75% |
-| token_freq | 16.78% | -1.04% |
-| perplexity | 6.88% | -0.18% |
-| entropy | 5.86% | -0.03% |
-| sparse_idf | 4.37% | -0.26% |
-| ngram | 1.62% | +0.05% |
-
----
-
-## 44 Handcrafted Features
-
-### Structural
-- Prompt length (char/word count)
-- Sentence count, average sentence length
-- Uppercase ratio, digit ratio, special char ratio
-- Word length variance
-
-### Lexical
-- Attack keyword count and density
-- Encoding detection (base64, hex, URL, unicode)
-- Structural pattern matching (instruction override, role hijack, system extraction)
-- Word repeat ratio, bigram repeat ratio
-
-### Statistical
-- Character entropy, word entropy
-- Unique word ratio, hapax ratio
-- Question presence, exclamation ratio
-
-### Injection-Specific
-- Delimiter detection (``` markers, [INST], <<SYS>>)
-- XML tag detection, bracket detection
-- Colon-separated role markers (USER:, ASSISTANT:, SYSTEM:)
-- Imperative verb detection (starts with "ignore", "forget", etc.)
-
----
-
-## Files
-
-| File | Description |
-|------|-------------|
-| `src/features.py` | 44 handcrafted feature extraction |
-| `src/patterns.py` | 35+ regex patterns for attack detection |
-| `src/similarity.py` | TF-IDF similarity scorer |
-| `src/scorer.py` | Main hybrid scorer class |
-| `src/train.py` | Memory-optimized training |
-| `src/train_full.py` | Full dataset training pipeline |
-| `BENCHMARK.md` | Detailed benchmark results |
-| `requirements.txt` | Dependencies |
-
----
-
-## Usage
+## Quick Start
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Train on full dataset
-python src/train_full.py
+# Step 1: Create fixed train/val/test split
+python benchmark/step1_split.py
 
-# Run inference
-python src/scorer.py --text "Ignore previous instructions..."
+# Step 2: Run baseline models
+python benchmark/step2_baselines.py
+
+# Step 3: Run ablation study
+python benchmark/step3_ablation.py
+
+# Step 4: Get feature importance
+python benchmark/step4_feature_importance.py
+
+# Step 5: Run latency benchmark
+python benchmark/step5_latency.py
+
+# Step 6: Save model artifacts
+python benchmark/save_model.py
+
+# Step 7: Run adversarial robustness testing
+python benchmark/adversarial_robustness.py
+
+# Step 8: Run cross-dataset generalization
+python benchmark/cross_dataset.py
 ```
 
 ---
 
-## Reproduction
+## Key Results
 
-```bash
-# Training
-python src/train_full.py
-# Results saved to:
-#   src/models/          — model artifacts
-#   src/results/         — benchmark JSON
+### Model Performance (In-Distribution)
 
-# Evaluation
-python src/evaluate.py --mode all
-```
+| Metric | Value |
+|--------|-------|
+| Accuracy | **86.45%** |
+| F1 Score | **0.8881** |
+| AUC-ROC | **0.9410** |
+| Model Size | **~7 MB** |
+| Features | 5,027 (5,000 TF-IDF + 27 handcrafted) |
+
+### Adversarial Robustness
+
+| Transformation | Detection Rate | ASR |
+|----------------|---------------|-----|
+| Original | 88.0% | 12.0% |
+| Paraphrase | 88.0% | 12.0% |
+| Misspelling | 71.0% | 29.0% |
+| Unicode | 85.0% | 15.0% |
+| Base64 | 100.0% | 0.0% |
+| **Average** | **88.0%** | **12.0%** |
+
+### Cross-Dataset Generalization
+
+| Dataset | Accuracy | Δ Accuracy |
+|---------|----------|------------|
+| Guardrailer v1 (in-dist) | 86.45% | — |
+| JailbreakBench | 56.00% | -30.45 pp |
+| Jailbreak Classification | 57.76% | -28.69 pp |
+| Jailbreak Complete DS | 43.06% | -43.39 pp |
+| JailbreakHub | 60.41% | -26.04 pp |
+| **Average (external)** | **54.31%** | **-32.14 pp** |
 
 ---
 
-## Comparison: Resource Usage
+## Dataset
 
-| Resource | Embedding Pipeline | Hybrid Lightweight |
-|----------|-------------------|-------------------|
-| Model size | 1.3 GB + 1.5 GB embeddings | **7.1 MB** |
-| Vector database | Qdrant (4GB+ RAM) | **None** |
-| GPU requirement | Yes (T4 for generation) | **No** |
-| Ingestion time | Hours | **Minutes** |
-| Query latency | ~5 ms | **~0.001 ms** |
-| Throughput | ~200/s | **~808K/s** |
-| Storage | GB-scale | **MB-scale** |
+- **Source:** `guardrailer_dataset_v1.parquet`
+- **Size:** 722,842 labeled prompts
+- **Split:** 70% train / 10% val / 20% test (stratified)
+- **Classes:** Safe (40.1%) / Malicious (59.9%)
+
+Place the dataset in `/home/prashanna/Documents/Guardrailer/dataset/` before running benchmarks.
 
 ---
 
-*Generated: 2026-08-10 | Dataset: guardrailer_dataset_v1.parquet (722,842 samples) | Model: XGBoost GPU (300 trees, max_depth=6)*
+## Hardware Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| CPU | Any | x86_64 |
+| RAM | 4 GB | 16 GB |
+| GPU | Not required | RTX 4060+ (for XGBoost training) |
+| Storage | 500 MB | 2 GB |
+
+---
+
+## Generated Reports
+
+| Report | Description |
+|--------|-------------|
+| `Hybrid_model_results.md` | Complete benchmark results (Steps 1-5) |
+| `Robustness.md` | Adversarial robustness testing (12 transformations) |
+| `crossdata.md` | Cross-dataset generalization (4 external datasets) |
+
+---
+
+## License
+
+MIT
