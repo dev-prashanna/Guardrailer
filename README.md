@@ -154,3 +154,31 @@ Returns `{"status": "ok"}`.
 ## License
 
 MIT
+
+## Notebooks
+
+### bge_large_evaluation.ipynb
+
+Evaluates **BAAI/bge-large-en-v1.5** on the Guardrailer Dataset v1 for prompt injection detection using centroid similarity and linear probes.
+
+**Setup:** Kaggle with GPU T4, `guardrailer_dataset_v1.parquet` from Kaggle, 10,000 stratified samples (80/20 split).
+
+**Dependencies:**
+```bash
+pip install sentence-transformers scikit-learn pandas numpy matplotlib seaborn
+```
+
+**Outputs:**
+- `bge_large_results.json` / `bge_large_results.csv` — Full metrics
+- `fig_centroid_similarity.png` — Centroid similarity bar chart
+- `fig_linear_probe_performance.png` — Multi-metric bar chart
+- `fig_roc_curve.png` — ROC curve
+- `fig_score_distribution.png` — Score distribution + margin analysis
+
+**Collapse Criteria:** Centroid similarity > 0.95, AUC-ROC < 0.55, accuracy < majority-class baseline.
+
+**Checkpointing:** Auto-saves to `/kaggle/working/checkpoints/`. Re-run all cells to resume.
+
+### embedding_model_evaluation.ipynb
+
+Multi-model embedding evaluation notebook for comparing different embedding models.
