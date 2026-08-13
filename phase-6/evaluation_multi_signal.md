@@ -178,7 +178,7 @@ The 144,569-sample evaluation confirms the findings from the 199-sample Phase-6 
 
 ```bash
 # Run the evaluation
-cd /home/prashanna/Documents/Guardrailer
+cd /home/prashanna/Documents/Guardrailer/phase-6
 python3 evaluate_phase6_full.py
 
 # Report location
@@ -201,5 +201,5 @@ To resume from checkpoint, simply re-run the script — completed phases are ski
 
 ---
 
-*Report generated from `evaluation_results/phase6_full_722k_report.json`*
+*Report generated from `phase-6/evaluation_results/phase6_full_722k_report.json`*
 *Evaluation date: 2026-08-11 14:30:31*

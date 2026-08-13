@@ -13,6 +13,7 @@ from pathlib import Path
 warnings.filterwarnings("ignore")
 sys.path.insert(0, "/home/prashanna/Documents/Guardrailer")
 sys.path.insert(0, "/home/prashanna/Documents/Guardrailer/guardrailer_security")
+sys.path.insert(0, "/home/prashanna/Documents/Guardrailer/phase-6")
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ import pandas as pd
 SEED = 42
 np.random.seed(SEED)
 
-RESULTS_DIR = Path("/home/prashanna/Documents/Guardrailer/evaluation_results")
+RESULTS_DIR = Path("/home/prashanna/Documents/Guardrailer/phase-6/evaluation_results")
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 CKPT_DIR = RESULTS_DIR / "phase6_ckpt"
 CKPT_DIR.mkdir(parents=True, exist_ok=True)
